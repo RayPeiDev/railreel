@@ -32,11 +32,11 @@ body.tutSlow #fb{background:linear-gradient(rgba(255,255,255,.08),rgba(255,255,2
 body.tutSlow #fb.on{background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.28)) #101728}
 body.tutSlow::after{opacity:1;animation:tuts 1.6s ease-in-out infinite}
 @keyframes tuts{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6)}}
-#tut{position:fixed;left:50%;bottom:calc(22vh + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;padding:13px 26px;border-radius:999px;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,179,71,.75);color:#fff;font:700 19px/1 Rajdhani,system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s}
+#tut{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;padding:13px 26px;border-radius:999px;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,179,71,.75);color:#fff;font:700 19px/1 Rajdhani,system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s}
 #tut.on{opacity:1}
 body:not(.play) #tut{display:none}
 /* チュートリアルの操作説明：文言（#tut）の下に、小さく別表示 */
-#tutc{position:fixed;left:50%;bottom:calc(22vh - 38px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;padding:7px 16px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.85);font:700 14px/1 Rajdhani,system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s}
+#tutc{position:fixed;left:50%;top:calc(50% + 32px);transform:translateX(-50%);z-index:5;padding:7px 16px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.85);font:700 14px/1 Rajdhani,system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s}
 #tutc.on{opacity:1}
 body:not(.play) #tutc{display:none}
 #hud{position:fixed;inset:0;pointer-events:none;font-family:Rajdhani,system-ui,sans-serif;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7)}
@@ -1107,7 +1107,7 @@ class Main extends Phaser.Scene{
     this.pieces=[];this.bul=[];this.es=[];this.spawnA0=rnd(0,6.283);
     const pk=this.stage===1?testPick:null; // STAGE1だけ選択画面の指定に従う
     if(this.tutOn&&this.stage===0){ // チュートリアルの的：直線レールの真上で止まっていて、攻撃もしない。壁に1回ぶつかれば壊れる
-      const e={type:'norm',tut:true,r:ER,x:AR.sx,y:(this.demo&&AR.rect?AR.rect.y0+ER*1.5:AR.sy),vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false};
+      const e={type:'norm',tut:true,r:ER,x:AR.sx,y:(AR.rect?AR.rect.y0+ER*1.5:AR.sy),vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false}; // 見るパートも実践パートも同じ初期位置（レール領域の上端付近）
       this.es=[e];this.e=e;this.hitE.explode(20,AR.sx,AR.sy);
     }else if(pk==='eboss'||this.stage%10===0){ // 新ボス：向きだけ固定（位置は動く）。左右に砲台（目玉の敵）が一個ずつ
       const mx=Math.round((100+35*(this.stage-1))*1.4);
