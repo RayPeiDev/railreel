@@ -287,6 +287,7 @@ const EYE_CHG=0.55,EYE_EMIT=0.5,EYE_PO=ER-EYE_PR-5; // 目：撃つ前に黒目�
 const LASER_WHITE=0.55,LASER_THICK=1.35; // 光線（プリズム風）：元の色を白へ寄せる割合（0〜1）／光の太さの倍率（見た目だけ。当たり判定は変わらない）
 const BM_COL=0xff9a3c,BM_HIT=0xffd9a8,BM_CHG=1.1,BM_EMIT=1.5,BM_BV=900,BM_WAIT=2.6,BM_DIE=0.18,BM_SHAKE=3; // ロングビームの敵：光線と黒目の色・当たった点の色／溜め(秒)／ビームを出し続ける時間(秒)／ビームの速さ(px/秒)／撃ったあとの待ち(秒)／銛で消える時の光る時間(秒)／振動の幅(px)
 const TUT_MIN=0.03,TUT_KB=190,TUT_PULL_K=1,TUT_DRAG=2600,TUT_PULLS=3,TUT_RUN_T=1.3,TUT_SLOW0=0.23; // TUT_SLOW0＝引くたび（1〜3回目）のスローの始まりの強さ（小さいほど強い。ここからだんだん遅くなって止まる） // チュートリアル：ほぼ止まっている間の時間の進み／刺さった時に敵が銛の向きへ吹き飛ぶ速さ／引く力の倍率（本物の巻き取りの何倍か）／走り出した後、敵をレールへ引き込む加速度／引く回数／走らせてから、ぶつからなくても撃破にするまでの秒数
+const TUT_TURN_T=2,TUT_GOAL_T=4; // 実践の始まり：最初に「Your turn!」を見せる時間(秒)／そのあと「Goal: …」を見せる時間(秒)。この合計の間は、まだ撃てない（読む時間）
 const DEMO_PULLS=[0.35,0.47,0.59],DEMO_RUN_AT=0.62,DEMO_RUN_T=0.5,DEMO_MAX=30,DEMO_PULL_K=1; // 見本の台本（銛が刺さってからの秒数）：引くボタンを押す時刻（0.12秒おきの連打）／横へ避け始める時刻／避けて動く長さ(秒)。毎回同じ動きにするための固定値で、避けるのが早すぎ・遅すぎる時はDEMO_RUN_ATを、勢いはDEMO_PULL_Kを調整／万一止まっても、この秒数で本物のチュートリアルへ進む／引く力の倍率（1＝本編と同じ）
 const TUT_TOUCH=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
 const SLOW_AHEAD=0.25,SLOW_V=0.35,SLOW_MAX=1.0,SLOW_CD=1.5; // スローモーション：光線が自機に当たりそうな（この秒数以内に当たる）とき、時間の進みがSLOW_V倍になる。最長SLOW_MAX秒で、終わったらSLOW_CD秒は再発動しない
@@ -911,7 +912,7 @@ class Main extends Phaser.Scene{
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
     this.rerolls=1;this.mv=1;this.rest=REST;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
     this.cameras.main.setBackgroundColor(0x101728);
-    this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=2.2;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
+    this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=TUT_TURN_T+TUT_GOAL_T;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
     this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
     document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
 
@@ -1019,7 +1020,7 @@ class Main extends Phaser.Scene{
       else if(this.tp==='pull'){tx='Pull it in';tc=TUT_TOUCH?'Mash':'Mash Space';} // 引いた回数は画面に出さない
       else{tx='Dodge enemies and slam them into walls →';tc=TUT_TOUCH?'Stick':'WASD / Arrow keys';}
     }
-    if(this.tp==='fire'&&this.tutGoal){if(this.tutWait>0){tx='Goal: slam enemies into walls';tc='';}else this.tutGoal=false;} // 最初に、目的を見せる
+    if(this.tp==='fire'&&this.tutGoal){if(this.tutWait>TUT_GOAL_T){tx='Your turn!';tc='Now try it yourself';}else if(this.tutWait>0){tx='Goal: slam enemies into walls';tc='';}else this.tutGoal=false;} // 最初に「Your turn!」（自分で試す番だと伝える）→ 目的を見せる
     if(this.demo){tx='';tc='';if(this.tp==='fire'&&this.tutGoal){tx='Watch first';tc='Just watch — no need to touch anything';}} // 見本の間は文言を出さない。ただし始まってすぐの間だけ、「見ているだけでいい」と伝える（目的の文言は、見本のあとの本物のチュートリアルで出る）
     const tk=tx+'|'+tc;
     if(tk!==tutLast){tutLast=tk;if(tx){tutEl.textContent=tx;tutCEl.textContent=tc;}tutEl.classList.toggle('on',!!tx);tutCEl.classList.toggle('on',!!tx);}
