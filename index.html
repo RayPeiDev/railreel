@@ -2271,7 +2271,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       this.pressFired=false;
       if(this.h&&this.h.st==='drift')this.h.st='back'; // 壁際で漂っている銛は、押すと引き戻す
       for(const x of this.ex)if(x.h.st==='drift')x.h.st='back'; // 左右の銛も同じ
-      if(this.h&&this.h.st==='stuck'&&this.pullCD<=0&&(!this.tutOn||this.demo||(this.tp==='pull'&&(this.tutArm||this.tpull>0)))){if(this.tutOn&&!this.demo)this.tutPulled();this.jerkT=JERK_T;this.pullCD=JERK_CD;this.jerkFx=true;this.tautT=TAUT_T;sfx(170,110,0.1,0.32,'sine');sfx(400,260,0.05,0.1,'sine');} // 押した瞬間に1回、一気に引く（連打しても耳が疲れないよう、短く低めのサイン波2層）
+      if(this.h&&this.h.st==='stuck'&&this.pullCD<=0&&(!this.tutOn||this.demo||(this.tp==='pull'&&(this.tutArm||this.tpull>0)))){if(this.tutOn&&!this.demo)this.tutPulled();this.jerkT=JERK_T;this.pullCD=JERK_CD;this.jerkFx=true;this.tautT=TAUT_T;sfx(170,110,0.1,0.32,'sine');sfx(400,260,0.05,0.1,'sine');}else if(this.tutOn&&!this.demo&&this.tp==='move'&&this.h&&this.h.st==='stuck'){this.jerkFx=true;sfx(170,110,0.1,0.32,'sine');sfx(400,260,0.05,0.1,'sine');} // チュートリアルの4回目以降（走り出す前）：時間は止まったまま、紐が張る演出と音だけ。敵には力を与えない（引いた回数にも数えない）／押した瞬間に1回、一気に引く（連打しても耳が疲れないよう、短く低めのサイン波2層）
       if(this.h&&this.h.st==='stuck'&&this.e&&this.h.tg===this.e&&this.e.type==='boss'&&this.h.arm>=0)this.tearHit(this.h.arm); // ボスの盾に刺さっていれば、連打でちぎれていく
       if(this.h&&this.h.st==='stuck'&&this.e&&this.h.tg===this.e&&this.e.type==='boss'&&!(this.e.limp>0)){this.tugKick=true;if(this.h.arm<0)this.gripHit();} // ボスに刺さっていれば綱引き（本体は連打でゲージが溜まっていく）
     }
