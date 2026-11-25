@@ -74,6 +74,8 @@ body:not(.play) #tutc{display:none}
 .pill:active{background:rgba(255,255,255,.28)}
 body:not(.play) #hud,body:not(.play) #stk,body:not(.play) #fb{display:none}
 #skip{display:none;position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif}
+#tutSkip{display:none;position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif} /* チュートリアルを丸ごと飛ばすボタン（左上）。見本と実践の間ずっと出る */
+body.play.tut #tutSkip{display:block}
 body.test.play #skip{display:block} /* テストモード中のプレイ画面だけ表示 */
 #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:20;color:#fff;font-family:Rajdhani,system-ui,sans-serif;
   background:radial-gradient(ellipse at 50% 38%,#1c2750 0%,#0b1020 55%,#070a12 100%)}
@@ -127,7 +129,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="hud"><div id="hp"></div><div id="eb"><div id="stg"></div><div id="ebb"><div id="ebf"></div></div></div><div id="combo"></div><div id="msg"></div></div>
 <div id="stk"><div id="kn"></div></div>
 <div id="fb">FIRE</div>
-<button id="skip" type="button">Skip ▶▶</button>
+<button id="skip" type="button">Skip ▶▶</button><button id="tutSkip" type="button">Skip ▶▶</button>
 <div id="over"><canvas id="pile"></canvas>
   <div id="ovc"><div id="ovNew">NEW RECORD!</div><b id="ovb"></b><span id="ovs"></span><div id="tap">Tap to retry</div><button id="homeBtn" class="pill" type="button">Home</button></div><div id="ovCoin" class="coinBox"><i class="cn"></i><span id="ovCoinN">0</span></div><div id="ovGain"></div></div>
 <div id="set"><div id="setTop"><button id="setBack" class="pill" type="button">Back</button><div id="setT">Settings</div></div><div id="setList"><div class="srow"><span>Sound FX</span><button id="sfxSw" class="sw" type="button" role="switch" aria-checked="true" aria-label="Sound FX"><i></i></button></div><div class="srow"><span>How to play</span><button id="tutRe" class="pill" type="button">Watch again</button></div></div></div>
@@ -285,6 +287,7 @@ const EYE_CHG=0.55,EYE_EMIT=0.5,EYE_PO=ER-EYE_PR-5; // 目：撃つ前に黒目�
 const LASER_WHITE=0.55,LASER_THICK=1.35; // 光線（プリズム風）：元の色を白へ寄せる割合（0〜1）／光の太さの倍率（見た目だけ。当たり判定は変わらない）
 const BM_COL=0xff9a3c,BM_HIT=0xffd9a8,BM_CHG=1.1,BM_EMIT=1.5,BM_BV=900,BM_WAIT=2.6,BM_DIE=0.18,BM_SHAKE=3; // ロングビームの敵：光線と黒目の色・当たった点の色／溜め(秒)／ビームを出し続ける時間(秒)／ビームの速さ(px/秒)／撃ったあとの待ち(秒)／銛で消える時の光る時間(秒)／振動の幅(px)
 const TUT_MIN=0.03,TUT_KB=190,TUT_PULL_K=1,TUT_DRAG=2600,TUT_PULLS=3,TUT_RUN_T=1.3,TUT_SLOW0=0.23; // TUT_SLOW0＝引くたび（1〜3回目）のスローの始まりの強さ（小さいほど強い。ここからだんだん遅くなって止まる） // チュートリアル：ほぼ止まっている間の時間の進み／刺さった時に敵が銛の向きへ吹き飛ぶ速さ／引く力の倍率（本物の巻き取りの何倍か）／走り出した後、敵をレールへ引き込む加速度／引く回数／走らせてから、ぶつからなくても撃破にするまでの秒数
+const DEMO_PULLS=[0.35,0.47,0.59],DEMO_RUN_AT=0.62,DEMO_RUN_T=0.5,DEMO_MAX=30,DEMO_PULL_K=1; // 見本の台本（銛が刺さってからの秒数）：引くボタンを押す時刻（0.12秒おきの連打）／横へ避け始める時刻／避けて動く長さ(秒)。毎回同じ動きにするための固定値で、避けるのが早すぎ・遅すぎる時はDEMO_RUN_ATを、勢いはDEMO_PULL_Kを調整／万一止まっても、この秒数で本物のチュートリアルへ進む／引く力の倍率（1＝本編と同じ）
 const TUT_TOUCH=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
 const SLOW_AHEAD=0.25,SLOW_V=0.35,SLOW_MAX=1.0,SLOW_CD=1.5; // スローモーション：光線が自機に当たりそうな（この秒数以内に当たる）とき、時間の進みがSLOW_V倍になる。最長SLOW_MAX秒で、終わったらSLOW_CD秒は再発動しない
 const EYE_BV=520,EYE_BN=4,EYE_LEN=160; // 光線の速さ(px/秒)・壁で跳ね返れる回数・光線の長さ(px)
@@ -597,7 +600,7 @@ function updCoin(){document.getElementById('homeCoin').textContent=save.coins;do
 
 /* ===== ホーム／リザルト画面 ===== */
 const homeEl=document.getElementById('home'),toastEl=document.getElementById('toast'),tutEl=document.getElementById('tut'),tutCEl=document.getElementById('tutc');
-let tutLast='';
+let tutLast='',demoDone=false; // demoDone＝見本（チュートリアルを自動で通して見せる）を見せ終えた（ページを開いている間）
 let screen='home',ovAt=0;
 function setScreen(s){screen=s;document.body.classList.toggle('play',s==='play');homeEl.style.display=s==='home'?'flex':'none';}
 setScreen('home');
@@ -626,6 +629,7 @@ const pickEl=document.getElementById('pick');
 function openPick(){overEl.style.display='none';if(!TEST_MODE){testPick='default';runGame();return;}pickEl.style.display='flex';} // 通常プレイでは選択画面を出さず、そのままスタート
 const skipBtn=document.getElementById('skip');
 skipBtn.addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];if(sc&&sc.skipStage)sc.skipStage();});
+document.getElementById('tutSkip').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&sc.tutOn)sc.tutSkip();}); // 左上のSkip：チュートリアル全体を飛ばす（見本の最中でも実践の途中でも）。タップで音声も起動するので、イベントは止めない
 function runGame(){const sc=game.scene.scenes[0];fireQ=false;kfire=false;setScreen('play');if(sc)sc.scene.restart();}
 function startGame(){openPick();}
 function goHome(){overEl.style.display='none';setScreen('home');}
@@ -675,7 +679,7 @@ document.getElementById('shopBack').addEventListener('pointerup',()=>{shopEl.sty
 updCoin();
 const setEl=document.getElementById('set'),sfxSw=document.getElementById('sfxSw');
 const updSet=()=>sfxSw.setAttribute('aria-checked',save.sfx?'true':'false');
-document.getElementById('tutRe').addEventListener('pointerup',e=>{save.tut=0;persist();e.target.textContent='Starts next play';});
+document.getElementById('tutRe').addEventListener('pointerup',e=>{save.tut=0;demoDone=false;persist();e.target.textContent='Starts next play';});
 document.getElementById('setBtn').addEventListener('pointerup',()=>{updSet();setEl.style.display='flex';});
 document.getElementById('setBack').addEventListener('pointerup',()=>{setEl.style.display='none';});
 sfxSw.addEventListener('pointerup',()=>{save.sfx=!save.sfx;persist();updSet();if(save.sfx){unlock();sfx(900,1500,0.1,0.3,'triangle');}else if(AC&&AC.state==='running')AC.suspend();}); // オフにしたら音声機能も止めて、他の再生を邪魔しない // 効果音のオン／オフ（オンにした時だけ確認音）
@@ -907,7 +911,8 @@ class Main extends Phaser.Scene{
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
     this.rerolls=1;this.mv=1;this.rest=REST;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
     this.cameras.main.setBackgroundColor(0x101728);
-    this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=0.7;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false; // チュートリアルの進行（fire→fly→pull→move→run）
+    this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=2.2;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
+    this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
     document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
 
     if(!this.textures.exists('spark')){
@@ -962,35 +967,63 @@ class Main extends Phaser.Scene{
     e.vx+=dx/d*TUT_DRAG*STEP;e.vy+=dy/d*TUT_DRAG*STEP;
   }
   tutEnd(){ // 的が壊れた：チュートリアル完了（二度と出ないようにセーブ）。このあとSTAGE1へ進む
+    if(this.demo){this.demoEndT=1.4;return;} // 見本：セーブせず、「Your turn!」を少し見せてから本物のチュートリアルへ
     this.tutOn=false;save.tut=1;persist();
     document.body.classList.remove('tut','tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
     this.combo=0;this.comboT=0;comboEl.style.opacity=0;
+  }
+  demoStep(dr){ // 見本：チュートリアルの流れ（撃つ→引く→走って壁にぶつける）を、スローなしの普通の速さで自動で通して見せる
+    fireQ=false; // 見本の間は、タップ・キーの操作を受け付けない（撃つのは、台本が入れる時だけ）
+    this.demoT+=dr;this.demoFlash=Math.max(0,this.demoFlash-dr);
+    if(this.tp!==this.demoTp){this.demoTp=this.tp;this.dT=0;}else this.dT+=dr; // dT＝今の段階に入ってからの秒数
+    this.demoHold=false;this.demoMv=0;
+    if(this.demoEndT>0){this.demoEndT-=dr;if(this.demoEndT<=0)this.demoFinish();return;}
+    if(this.demoT>DEMO_MAX){this.demoFinish();return;} // 万一どこかで止まっても、先へ進める
+    const e=this.e;
+    if(this.tp==='fire'){if(this.tutWait<=0&&this.dT>0.4){fireQ=true;this.demoFlash=0.3;}} // 撃つ（外れたら撃ち直す）
+    else if(this.tp==='pull'){ // 台本：決めた時刻に引くボタンを連打 → 決めた時刻に右へ避ける
+      if(DEMO_PULLS.some(a=>this.dT>=a&&this.dT<a+0.06)){this.demoHold=true;this.demoFlash=0.3;}
+      if(this.dT>=DEMO_RUN_AT){this.tp='run';this.tutRun=0;this.tutKillT=0;this.demoMv=1;}
+    }
+    else if(this.tp==='run')this.demoMv=this.dT<DEMO_RUN_T?1:0; // 避ける：右へ少しだけ動いて止まる（あとは敵が惰性で壁へ）
+  }
+  tutSkip(){ // 左上のSkip：チュートリアル全体を飛ばす。二度と出ないようにセーブして、ステージ1から始め直す
+    if(this.demoFin)return;this.demoFin=true;demoDone=true;save.tut=1;persist();
+    document.body.classList.remove('tut','tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    fireQ=false;kfire=false;this.scene.restart();
+  }
+  demoFinish(){ // 見本を終えて、本物のチュートリアルへ（シーンを始め直す）
+    if(this.demoFin)return;this.demoFin=true;demoDone=true;fireQ=false;kfire=false;this.scene.restart();
   }
   tutUpdate(dr){ // 毎フレーム：時間の進み（スロー→ほぼ停止）・押せるボタンの案内。返り値＝時間の進み
     const e=this.e;
     if(this.tp==='fire'&&this.tutWait>0)this.tutWait-=dr;
     if(this.tp==='fly'&&!this.h){this.tp='fire';this.tutWait=0.4;} // 外れた：撃ち直し
     else if((this.tp==='pull'||this.tp==='move')&&e&&!e.dead&&!(this.h&&this.h.st==='stuck')){this.tp='fire';this.tutWait=0.4;e.vx=e.vy=0;} // 銛が外れた：撃ち直し
+    if(this.demo)this.demoStep(dr);
     if(this.tutRun>0){this.tutRun-=dr;this.tutSp=this.tutRunSp;}
     else if(this.tp==='run')this.tutSp+=(1-this.tutSp)*(1-Math.exp(-10*dr)); // 走り出したら、スローはすぐ解けて通常の速さに戻る
     else if(this.tp==='fly')this.tutSp=this.tutRunSp; // 刺さるまでは進める
     else if(this.tp==='pull'&&!this.tutSlowOn)this.tutSp=1; // 刺さってから最初に引くまでは、通常の速さ
     else{this.tutSp*=Math.exp(-2.4*dr);if(this.tutSp<0.01)this.tutSp=0;} // どのスローも、どんどん遅くなって、最後は完全に止まる
     const wait=this.tp==='fire'||this.tp==='pull'||this.tp==='move';
-    this.tutArm=wait&&(this.tp==='pull'||(this.tutSp<0.12&&this.tutWait<=0)); // 止まったら押せるようになる（「引く」だけは、刺さった直後からすぐ押せる）
-    if(this.tp==='move'&&this.tutArm&&inputX()>0.3){this.tp='run';this.tutRun=0;this.tutKillT=0;} // スティックを右へ：走り出す
+    this.tutArm=wait&&(this.tp==='pull'||(this.tutSp<0.12&&this.tutWait<=0));if(this.demo)this.tutArm=wait&&(this.tp!=='fire'||this.tutWait<=0); // 止まったら押せるようになる（「引く」だけは、刺さった直後からすぐ押せる）
+    if(this.tp==='move'&&this.tutArm&&(this.demo?this.demoMv:inputX())>0.3){this.tp='run';this.tutRun=0;this.tutKillT=0;} // スティックを右へ：走り出す
     if(this.tp==='run'&&e&&!e.dead){this.tutKillT+=dr;if(this.tutKillT>TUT_RUN_T)this.wallHit(e.x,e.y+e.r,900,e,{nx:0,ny:1});} // 万一ぶつからなくても、ぶつけたことにする
     const pa=this.tp==='pull'&&this.tpull>0,fp=(this.tutArm||pa)&&(this.tp==='fire'||this.tp==='pull'),sp=this.tutArm&&this.tp==='move',cl=document.body.classList;
     cl.toggle('tutF',fp);cl.toggle('tutS',sp);if(this.tp==='fire'||this.tp==='fly')this.tutSlowOn=false;cl.toggle('tutSlow',this.tp!=='run'&&(this.tutSp<0.45||(this.tp==='pull'&&this.tutSlowOn)));fb.classList.toggle('tutp',fp);stk.classList.toggle('tutp',sp);
+    if(this.demo){const df=this.demoFlash>0,ds=this.demoMv>0,c2=document.body.classList;c2.toggle('tutF',df);c2.toggle('tutS',ds);c2.remove('tutSlow');fb.classList.toggle('tutp',df);stk.classList.toggle('tutp',ds);} // 見本：スローなし。自動で押している操作（撃つ・引く／走る）のボタンを光らせる
     let tx='',tc=''; // tx＝文言（何をするか）／tc＝操作説明（どう操作するか）。別々の表示
     if(this.tutArm||pa){
       if(this.tp==='fire'){tx='Shoot the enemy';tc=TUT_TOUCH?'Tap':'Space key';}
       else if(this.tp==='pull'){tx='Pull it in';tc=TUT_TOUCH?'Mash':'Mash Space';} // 引いた回数は画面に出さない
       else{tx='Dodge enemies and slam them into walls →';tc=TUT_TOUCH?'Stick':'WASD / Arrow keys';}
     }
+    if(this.tp==='fire'&&this.tutGoal){if(this.tutWait>0){tx='Goal: slam enemies into walls';tc='';}else this.tutGoal=false;} // 最初に、目的を見せる
+    if(this.demo){tx='';tc='';if(this.tp==='fire'&&this.tutGoal){tx='Watch first';tc='Just watch — no need to touch anything';}} // 見本の間は文言を出さない。ただし始まってすぐの間だけ、「見ているだけでいい」と伝える（目的の文言は、見本のあとの本物のチュートリアルで出る）
     const tk=tx+'|'+tc;
     if(tk!==tutLast){tutLast=tk;if(tx){tutEl.textContent=tx;tutCEl.textContent=tc;}tutEl.classList.toggle('on',!!tx);tutCEl.classList.toggle('on',!!tx);}
-    return this.tutSp;
+    return this.demo?1:this.tutSp; // 見本はスローなし
   }
   /* --- ダメージ数値：当たった位置（世界座標）に出して、その場に固定。文字は画面に対して常に正立（カメラが回っても傾かない）・大きさも画面上で一定。盾が残っているボスへの軽減ダメージは小さく灰色 --- */
   dmgNum(x,y,v,weak){
@@ -1052,7 +1085,7 @@ class Main extends Phaser.Scene{
     this.pieces=[];this.bul=[];this.es=[];this.spawnA0=rnd(0,6.283);
     const pk=this.stage===1?testPick:null; // STAGE1だけ選択画面の指定に従う
     if(this.tutOn&&this.stage===0){ // チュートリアルの的：直線レールの真上で止まっていて、攻撃もしない。壁に1回ぶつかれば壊れる
-      const e={type:'norm',tut:true,r:ER,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false};
+      const e={type:'norm',tut:true,r:ER,x:AR.sx,y:(this.demo&&AR.rect?AR.rect.y0+ER*1.5:AR.sy),vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false};
       this.es=[e];this.e=e;this.hitE.explode(20,AR.sx,AR.sy);
     }else if(pk==='eboss'||this.stage%10===0){ // 新ボス：向きだけ固定（位置は動く）。左右に砲台（目玉の敵）が一個ずつ
       const mx=Math.round((100+35*(this.stage-1))*1.4);
@@ -1702,7 +1735,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const T=this.tail(),LT=this.liftTarget(q,e,T),dx=LT.x-T.x,dy=LT.y-T.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
       const rx=T.x-e.x,ry=T.y-e.y,rc=rx*ny-ry*nx; // 接続点の腕の長さ（トルク用。てこの長さ）
       const vr=e.vx*nx+e.vy*ny+e.w*rc;
-      const kk=(o.tut?TUT_PULL_K:REEL_MAX*this.pullM)*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
+      const kk=(o.tut?(this.demo?DEMO_PULL_K:TUT_PULL_K):REEL_MAX*this.pullM)*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
       if(vr<PULLMAX*kk){const a=Math.min(PULLA*kk*STEP,PULLMAX*kk-vr)/(e.m||1)/(1+rc*rc/EIo);e.vx+=nx*a;e.vy+=ny*a;e.w=clamp(e.w+rc*a/EIo,-20,20);}
     }
     // 移動
@@ -2222,7 +2255,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
 
   step(){
     if(this.over||this.pickOn)return;
-    const inx=this.tutOn?(this.tp==='run'?Math.max(0,inputX()):0):inputX(); // チュートリアル中は、最後の「移動」まで自機は動かせない
+    const inx=this.tutOn?(this.tp==='run'?Math.max(0,this.demo?this.demoMv:inputX()):0):inputX(); // チュートリアル中は、最後の「移動」まで自機は動かせない
     this.vel+=(inx*SPEED*this.mv-this.vel)*(1-Math.exp(-(inx*this.vel<0?TURN_K:14)*STEP)); // 今の動きと逆向きに入力したときだけ、追従を速くする（切り返しブースト）
     this.s+=this.vel*STEP;
     if(RAIL.open){if(this.s<0){this.s=0;if(this.vel<0)this.vel=0;}else if(this.s>L){this.s=L;if(this.vel>0)this.vel=0;}}
@@ -2231,13 +2264,13 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(this.comboT>0){this.comboT-=STEP;if(this.cbi)this.cbi.style.transform='scaleX('+Math.max(0,this.comboT/1.4)+')';if(this.comboT<=0){this.combo=0;comboEl.style.opacity=0;}}
     this.recoil*=Math.exp(-18*STEP);
     // ボタン：刺さっている時は、押した瞬間に1回グイッと引く（次に引けるまで少し間がある）
-    const hd=held();
+    const hd=this.demo?this.demoHold:held(); // 見本の「引く」は台本が押す（見本の間は、本物の操作を無視）
     this.jerkT=Math.max(0,this.jerkT-STEP);this.pullCD-=STEP;this.snapT=Math.max(0,this.snapT-STEP);this.tautT=Math.max(0,this.tautT-STEP);
     if(hd&&!this.wasHeld){
       this.pressFired=false;
       if(this.h&&this.h.st==='drift')this.h.st='back'; // 壁際で漂っている銛は、押すと引き戻す
       for(const x of this.ex)if(x.h.st==='drift')x.h.st='back'; // 左右の銛も同じ
-      if(this.h&&this.h.st==='stuck'&&this.pullCD<=0&&(!this.tutOn||(this.tp==='pull'&&(this.tutArm||this.tpull>0)))){if(this.tutOn)this.tutPulled();this.jerkT=JERK_T;this.pullCD=JERK_CD;this.jerkFx=true;this.tautT=TAUT_T;sfx(170,110,0.1,0.32,'sine');sfx(400,260,0.05,0.1,'sine');} // 押した瞬間に1回、一気に引く（連打しても耳が疲れないよう、短く低めのサイン波2層）
+      if(this.h&&this.h.st==='stuck'&&this.pullCD<=0&&(!this.tutOn||this.demo||(this.tp==='pull'&&(this.tutArm||this.tpull>0)))){if(this.tutOn&&!this.demo)this.tutPulled();this.jerkT=JERK_T;this.pullCD=JERK_CD;this.jerkFx=true;this.tautT=TAUT_T;sfx(170,110,0.1,0.32,'sine');sfx(400,260,0.05,0.1,'sine');} // 押した瞬間に1回、一気に引く（連打しても耳が疲れないよう、短く低めのサイン波2層）
       if(this.h&&this.h.st==='stuck'&&this.e&&this.h.tg===this.e&&this.e.type==='boss'&&this.h.arm>=0)this.tearHit(this.h.arm); // ボスの盾に刺さっていれば、連打でちぎれていく
       if(this.h&&this.h.st==='stuck'&&this.e&&this.h.tg===this.e&&this.e.type==='boss'&&!(this.e.limp>0)){this.tugKick=true;if(this.h.arm<0)this.gripHit();} // ボスに刺さっていれば綱引き（本体は連打でゲージが溜まっていく）
     }
@@ -2258,7 +2291,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(fireQ){fireQ=false;if(!this.h&&this.cool<=0&&this.e&&(!this.tutOn||(this.tp==='fire'&&this.tutArm))){this.fire();if(this.tutOn){this.tp='fly';this.tutRunSp=0.6;}}}
     if(this.upgT>0){this.upgT-=STEP;if(this.upgT<=0)this.openUpg();}
     if(!this.e){this.resT-=STEP;if(this.resT<=0)this.spawn();}
-    else{if(this.tutOn&&this.tp==='run')this.tutDrag(q);this.stepEnemy(q);this.tugKick=false;}
+    else{if(this.tutOn&&this.tp==='run'&&!this.demo)this.tutDrag(q);this.stepEnemy(q);this.tugKick=false;}
     for(const pc of this.pieces.slice())this.stepPiece(pc,q);
     if(this.h){this.stepHarpoon(q);if(this.h)this.stepExtras(q);}
   }
