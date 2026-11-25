@@ -506,6 +506,27 @@ function sfx(f0,f1,dur,vol,type){
     o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur);
   }catch(_){}
 }
+/* --- 金属に弾かれた「キーン」という音。整数倍でない倍音を重ねて、澄んだ余韻を残す。vol＝大きさ、pm＝音程の倍率（大きいほど高い）、ring＝余韻の長さの倍率 --- */
+let PING_NZ=null;
+function pingSfx(vol,pm,ring){
+  if(!SYNTH_SFX||!AC||!save.sfx)return;
+  try{
+    const t=AC.currentTime,v=vol==null?0.35:vol,p=pm||1,r=ring||1;
+    // [周波数の倍率, 大きさ, 余韻の秒数]：基音＋金属っぽい非整数倍音
+    [[1,0.5,0.55],[2.76,0.28,0.35],[5.4,0.16,0.22]].forEach(([m,a,d])=>{
+      const o=AC.createOscillator(),g=AC.createGain();d*=r;
+      o.type='sine';o.frequency.setValueAtTime(1700*p*m*1.015,t);o.frequency.exponentialRampToValueAtTime(1700*p*m,t+0.03); // 当たった瞬間だけ、わずかに高く
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(a*v,t+0.003);g.gain.exponentialRampToValueAtTime(0.001,t+d);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+0.02);
+    });
+    // 当たった瞬間のカチッという高い衝撃音
+    if(!PING_NZ){const n=Math.floor(AC.sampleRate*0.03),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;PING_NZ=b;}
+    const s=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();
+    s.buffer=PING_NZ;fl.type='highpass';fl.frequency.value=4000;
+    g.gain.setValueAtTime(0.5*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+    s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start(t);
+  }catch(_){}
+}
 
 /* --- 敵を壁に叩きつける音。bump.mp3だけを鳴らす（低音の合成音は重ねない）。k=衝撃の強さ0〜1、pm=音程の倍率（コンボで上がる）。強いほど大きく低い。bumpが読み込み前の間だけ、従来のドゴッ（合成音のみ）を鳴らす --- */
 const SLAM_VOL=0.7; // この音全体の大きさ。ここで調整できる
@@ -1917,7 +1938,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(e.type==='clam'&&e.shell){ // 貝：シールドには弾かれる。割れて見えている本体にだけ刺さり、刺さるとシールドが砕け散る
       const c=Math.cos(e.a),sn=Math.sin(e.a),dx=tx-e.x,dy=ty-e.y,lx=dx*c+dy*sn,ly=-dx*sn+dy*c;
       if(Math.abs(lx)>2*CL_S+10||Math.abs(ly)>2*CL_S+10)return false;
-      if(this.clamPlateHit(e,lx,ly)){e.sf=1;this.deflect(tx,ty);return true;}
+      if(this.clamPlateHit(e,lx,ly)){e.sf=1;this.deflect(tx,ty,1.25);return true;}
       if(Math.hypot(lx,ly)<CL_B+3){this.embed(tx,ty,e);this.shatterShell(e);return true;}
       return false;
     }
@@ -1957,12 +1978,12 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');} // 貝のシールドが砕けた音：敵が砕ける音（glassbreak）と同じ
     this.note('Shield shattered! Slam it into the wall!');
   }
-  deflect(tx,ty){ // ボス本体は盾が残っている間、銛を弾く
+  deflect(tx,ty,pm){ // ボス本体は盾が残っている間、銛を弾く（pm＝キーン音の音程の倍率。貝のシールドは高め）
     const h=this.h;
     h.dvx=-h.ux*this.spd*0.2;h.dvy=-h.uy*this.spd*0.2;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);
     h.st='drift';h.trail.length=0;
     this.hitE.explode(12,tx,ty);this.cameras.main.shake(90,0.005);
-    sfx(1500,500,0.1,0.3,'square');sfx(3000,900,0.05,0.2,'triangle');
+    pingSfx(0.4,pm||0.85,1.3);
     if(!this.hintDef){this.hintDef=true;this.note('The body is tough... aim for the shield!');}
   }
 
@@ -1972,7 +1993,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     ar.tear+=1/TEAR_N;ar.flash=1;this.h.stT=0;
     const T=this.tail();
     this.hitE.explode(6,T.x,T.y);this.cameras.main.shake(70,0.004+0.004*ar.tear);
-    sfx(240+300*Math.min(1,ar.tear),150,0.07,0.22,'sine');
+    {const f=(650+450*Math.min(1,ar.tear))*(1+(Math.random()*2-1)*0.06);sfx(f,f*0.45,0.055,0.26,'sine');} // ポッ：gripHitと同じ軽い弾ける音
     if(ar.tear>=1)this.tearArm(e,i);
   }
   gripHit(){ // ボス本体に刺さって連打：力を抜かせるゲージ。フルになると、しばらく引き返さなくなる
@@ -1980,7 +2001,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     e.grip=(e.grip||0)+1/GRIP_N;this.h.stT=0;
     const T=this.tail();
     this.hitE.explode(6,T.x,T.y);this.cameras.main.shake(70,0.004+0.004*Math.min(1,e.grip));
-    sfx(240+300*Math.min(1,e.grip),150,0.07,0.22,'sine');
+    {const f=(650+450*Math.min(1,e.grip))*(1+(Math.random()*2-1)*0.06);sfx(f,f*0.45,0.055,0.26,'sine');} // ポッ：高めから素早く下がる短いサイン波（ゲージが溜まるほど高く、毎回わずかにばらつく）
     if(e.grip>=1){
       e.grip=0;e.limp=LIMP_T;e.tele=0;
       for(let i=0;i<36;i++){ // パリンと割れる：本体のまわりに、ガラスのような破片が弾ける
@@ -2195,7 +2216,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         h.dvx=vx;h.dvy=vy;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-2.2,2.2);
         h.st='drift';h.trail.length=0;
         const wx=b.x+h.ux*LEN,wy=b.y+h.uy*LEN;
-        this.hitE.explode(10,wx,wy);this.cameras.main.shake(70,0.004);sfx(260,120,0.1,0.3,'square');
+        this.hitE.explode(10,wx,wy);this.cameras.main.shake(70,0.004);pingSfx(0.35,1,0.9);
       }
       else if(c0>=RMAX){ // 紐が最大の長さまで伸びきった：何にも当たらなかったので、その場でふわっと漂い始める（押すと引き戻す）
         h.dvx=h.dvy=0;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-2.2,2.2);h.st='drift';h.trail.length=0;
@@ -2218,7 +2239,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       }
       {const dd=Math.hypot(b.x-pvx,b.y-pvy);if(dd>RMAX){const f=RMAX/dd;b.x=pvx+(b.x-pvx)*f;b.y=pvy+(b.y-pvy)*f;}} // 紐の最大の長さより外へは漂わない（自機が動くと、紐に引かれてついてくる）
       b.px=b.x;b.py=b.y;
-      if(bounced&&Math.hypot(h.dvx,h.dvy)>40)sfx(200,100,0.06,0.12,'square');
+      if(bounced&&Math.hypot(h.dvx,h.dvy)>40)pingSfx(0.12,1.5,0.35); // 漂う銛が壁で跳ね返る：小さくて軽い金属音（高め・余韻短め）
       this.ropeLen=Math.hypot(pvx-b.x,pvy-b.y)*1.05+10; // 紐は少したるんだまま
     }
     if(h.st==='back'){
