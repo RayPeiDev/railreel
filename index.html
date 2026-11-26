@@ -677,6 +677,26 @@ const TURRETS=[
   {id:'firework',name:'Fireworks',desc:'While stuck, sparks run along the rope like a fuse. When they reach the enemy, a fixed-power firework goes off and deals damage (no knockback).',price:500,icon:IC.firework},
   {soon:true}
 ];
+/* 砲台ごとの自機の見た目（定義の無い砲台は std と同じ）。一つずつ作っていく。
+   wh＝台車の四角／ax＝車軸の丸／bd＝本体／ol＝本体の縁／ba＝銃身。
+   bodyDeco(g,rc,ma)＝本体の上の飾り（本体と同じ座標、rc＝反動）／barDeco(g,ma)＝銃身の飾り（銃身と同じ座標）。ma＝透明度（無敵中の点滅） */
+const SHIP_SKIN={
+  std:{wh:0xb9c4e4,ax:0x4a5a85,bd:0xe9edf8,ol:0x26304d,ba:0x4a5a85},
+  bomb:{wh:0x6b738f,ax:0x2b3048,bd:0x3a4060,ol:0x161a2b,ba:0x2a2f45,
+    bodyDeco(g,rc,ma){ // 本体の左右に、ミニ爆弾（黒い丸＋オレンジの縁＋小さな導火線）。中央は銃身が重なるので避ける
+      for(const y of [-12.5,12.5]){
+        const x=14-rc;
+        g.fillStyle(0x0e1019,ma);g.fillCircle(x,y,5);
+        g.lineStyle(1.6,0xffb347,ma);g.strokeCircle(x,y,5);
+        g.fillStyle(0x7a84a6,ma);g.fillCircle(x-1.6,y-1.6,1.1);
+        g.lineStyle(1.4,0xcfa15a,ma);g.lineBetween(x+4,y,x+7,y);
+        g.fillStyle(0xffd27a,ma);g.fillCircle(x+7.4,y,1.3);
+      }
+    },
+    barDeco(g,ma){ // 銃身にオレンジの帯
+      g.fillStyle(0xffb347,ma);g.fillRect(9,-6,3,12);
+    }}
+};
 function renderShop(){
   shopRow.innerHTML='';updCoin();
   TURRETS.forEach((t,i)=>{
@@ -1287,7 +1307,9 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     h.fz=this.eq()==='firework'?{d:0,t:0,w:0}:null; // 花火：導火線の火花（走った距離・時間）
   }
   bombBlast(tx,ty,e){ // 爆弾：突き刺した直後に爆発して、刺した相手に一定ダメージ＋ランダムな方向へ強く吹き飛ばす（盾つきボス本体のダメージはほとんど効かない）
+    const hh=this.h; // 爆発した時に、この銛から爆弾が取れる（敵が先に倒れていても）
     this.time.delayedCall(110,()=>{
+      if(hh)hh.bd=true;
       if(!e||e.dead||(!e.isPiece&&!this.es.includes(e)))return;
       const cam=this.cameras.main,armored=e.type==='boss'&&e.arms.some(a=>a.alive);
       {const dm=armored?BOMB_DMG*0.2:BOMB_DMG;e.hp-=dm;this.dmgNum(tx,ty,dm,armored);}
@@ -2107,10 +2129,10 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       }
     }
   }
-  drawHarp(g,q,h,rope,main,taut){ // 紐と銛を描く（本体も左右の銛も同じ）。紐の張り・巻き取りの表現は本体だけ
+  drawHarp(g,q,h,rope,main,taut,part){ // 紐と銛を描く（本体も左右の銛も同じ）。紐の張り・巻き取りの表現は本体だけ。part＝'rope'なら紐だけ・'harp'なら銛だけ（省略なら両方）
     const rl=main&&this.reeling,tz=main?this.taut:taut;
     // ロープ（たるむと暗く細く、張ると明るく太く、巻き取り中はオレンジ）
-    if(rope){
+    if(rope&&part!=='harp'){
       const r=rope,pn=rl?(rl?1:0):0;
       const col=rl?((255<<16)|(Math.round(179-128*pn)<<8)|Math.round(71+14*pn)):(tz?0xffe6a8:0x8ea0c8);
       const sk=main&&this.snapT>0&&h?this.snapT/0.25:0; // 引いた直後は、実際に張った紐そのものを一瞬白く太く描く
@@ -2133,7 +2155,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(sk>0){g.lineStyle(3,0xffffff,sk);g.strokeCircle(h.b.x,h.b.y,10+50*(1-sk));} // 先端の衝撃リング
     }
     // 銛
-    if(h){
+    if(h&&part!=='rope'){
       const n=h.trail.length;
       for(let i=1;i<n;i++){g.lineStyle(3*i/n,0xffb347,0.6*i/n);g.lineBetween(h.trail[i-1].x,h.trail[i-1].y,h.trail[i].x,h.trail[i].y);}
       let ang;
@@ -2143,14 +2165,14 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       else ang=Math.atan2(h.b.y-q.pvy,h.b.x-q.pvx);
       g.save();g.translateCanvas(h.b.x,h.b.y);g.rotateCanvas(ang);
       const L=h.st==='stuck'?Math.max(1,h.sl):LEN; // 刺さっている間は、縮んだ判定の長さのまま描く
-      this.harpoon(g,L);
+      this.harpoon(g,L,this.eq()==='bomb'&&!h.bd); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
       if(h.st==='stuck'){ // 砕ける前触れ：最後は白く点滅（ひびの線は描かない）
         const k=h.stT/this.stuckT;
         if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2,-7,L+8,14,5);}
       }
       g.restore();
     }
-    if(main&&h&&h.st==='stuck'&&h.fz&&!(h.fz.w>0)&&rope){ // 花火：導火線の先頭で火花が光る（大きさは一定）
+    if(main&&h&&h.st==='stuck'&&h.fz&&!(h.fz.w>0)&&rope&&part!=='harp'){ // 花火：導火線の先頭で火花が光る（紐と一緒に描く）（大きさは一定）
       const f=h.fz,pw=fwPow(f.t),sz=FW_S0+(FW_SMAX-FW_S0)*pw,P=this.fuseXY(h,rope,f.d);
       g.fillStyle(0xff9a3c,0.28);g.fillCircle(P.x,P.y,sz*2.4);g.fillStyle(0xffd27a,0.75);g.fillCircle(P.x,P.y,sz*1.3);g.fillStyle(0xffffff,1);g.fillCircle(P.x,P.y,sz*0.65);
       const ns=4+Math.round(6*pw);
@@ -2327,12 +2349,21 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(this.h){this.stepHarpoon(q);if(this.h)this.stepExtras(q);}
   }
 
-  harpoon(g,len){
+  harpoon(g,len,bomb){ // bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
     const hl=Math.min(26,len),k=hl/26;
     g.fillStyle(0xcfd8ee,1);g.fillRect(0,-2.2,Math.max(0,len-18),4.4);
     g.fillStyle(0xffb347,1);
     g.fillTriangle(len,0,len-hl,-6*k,len-hl*22/26,0);g.fillTriangle(len,0,len-hl*22/26,0,len-hl,6*k);
     g.fillStyle(0x8fa3d6,1);g.fillCircle(0,0,3.5*Math.min(1,len/30));
+    if(bomb&&len>=44){ // 爆弾：矢じりの少し手前に、軸が貫通する形で黒い爆弾が刺さっている
+      const x=len-34;
+      g.fillStyle(0x0e1019,1);g.fillCircle(x,0,8);
+      g.lineStyle(1.5,0x4a5170,1);g.strokeCircle(x,0,8);
+      g.fillStyle(0x7a84a6,0.9);g.fillCircle(x-2.5,-3,2); // つや
+      g.fillStyle(0xcfd8ee,1);g.fillRect(x-8,-1.1,16,2.2); // 爆弾を貫く軸
+      g.lineStyle(2,0xcfa15a,1);g.lineBetween(x+1,-8,x+4,-13); // 導火線
+      g.fillStyle(0xffb347,1);g.fillCircle(x+4,-13.5,2.3);g.fillStyle(0xffffff,0.9);g.fillCircle(x+4,-13.5,1);
+    }
   }
 
   drawTurret(g,x,y,k,ang,gl,rot=0,al=1,kind='eyes'){ // 目玉の敵の姿（目玉の敵・ボスの砲台・ちぎれた砲台で共通）。ang＝黒目の向き／gl＝光の膨らみ（負なら停止＝光なし）／rot＝回転
@@ -2524,17 +2555,20 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
       g.lineStyle(2,0xffb347,0.28);
       for(let t=40;t<dist-(e.r||ER)-6;t+=15)g.lineBetween(q.pvx+ux*t,q.pvy+uy*t,q.pvx+ux*(t+6),q.pvy+uy*(t+6));
     }
-    for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut); // 左右の銛（散弾）
-    this.drawHarp(g,q,h,this.rope,true);
+    for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'harp'); // 左右の銛（散弾）。銛は本体の下、紐は本体の上に描く
+    this.drawHarp(g,q,h,this.rope,true,undefined,'harp');
     // 機械本体（レールに対して角度固定）。無敵中は点滅
     const rc=this.recoil,ma=(this.inv>0&&(Math.floor(this.inv*16)%2))?0.3:1;
     g.save();g.translateCanvas(q.p.x,q.p.y);g.rotateCanvas(q.phi);
-    g.fillStyle(0xb9c4e4,ma);g.fillRoundedRect(-10,-24,20,11,3);g.fillRoundedRect(-10,13,20,11,3);
-    g.fillStyle(0x4a5a85,ma);g.fillCircle(0,-18,3.5);g.fillCircle(0,18,3.5);
-    g.fillStyle(0xe9edf8,ma);g.fillRoundedRect(3-rc,-19,24,38,6);
-    g.lineStyle(2,0x26304d,ma);g.strokeRoundedRect(3-rc,-19,24,38,6);
-    g.fillStyle(0xff5e7a,ma);g.fillRect(6-rc,-19,5,38);
+    const skn=SHIP_SKIN[this.eq()]||SHIP_SKIN.std; // 装備中の砲台の見た目
+    g.fillStyle(skn.wh,ma);g.fillRoundedRect(-10,-24,20,11,3);g.fillRoundedRect(-10,13,20,11,3);
+    g.fillStyle(skn.ax,ma);g.fillCircle(0,-18,3.5);g.fillCircle(0,18,3.5);
+    g.fillStyle(skn.bd,ma);g.fillRoundedRect(3-rc,-19,24,38,6);
+    g.lineStyle(2,skn.ol,ma);g.strokeRoundedRect(3-rc,-19,24,38,6);
+    if(skn.bodyDeco)skn.bodyDeco(g,rc,ma);
     g.restore();
+    for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'rope'); // 紐：本体より上、発射台（銃身）より下
+    this.drawHarp(g,q,h,this.rope,true,undefined,'rope');
     if(this.shn>0){ // シールド：自機を覆って回る多角形（1枚=三角形、2枚=四角形…）
       const N=this.shn+2,cx=q.p.x+Math.cos(q.phi)*8,cy=q.p.y+Math.sin(q.phi)*8,pts=[];
       for(let k=0;k<N;k++){const a=this.shA+k*Math.PI*2/N;pts.push({x:cx+Math.cos(a)*PSH_R,y:cy+Math.sin(a)*PSH_R});}
@@ -2545,9 +2579,8 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     }
     // 銛の発射台（敵を向く）＋装填中の銛
     g.save();g.translateCanvas(q.pvx,q.pvy);g.rotateCanvas(q.psi);
-    g.fillStyle(0x26304d,ma);g.fillCircle(0,0,10);
-    g.fillStyle(0x4a5a85,ma);g.fillRect(-4,-6,22,12);
-    if(!h&&this.cool<=0){g.translateCanvas(-6,0);this.harpoon(g,LEN);}
+    if(!h&&this.cool<=0){g.translateCanvas(-6,0);this.harpoon(g,LEN,this.eq()==='bomb');g.translateCanvas(6,0);} // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
+    g.fillStyle(skn.ba,ma);g.fillRoundedRect(-10,-6,28,12,4);if(skn.barDeco)skn.barDeco(g,ma); // 銃身は角が丸い四角 // 銃身：前端は据え置き。後ろ端は、装填中の銛の尻（中心-6・半径3.5＝-9.5）をギリギリ覆う位置
     g.restore();
   }
 
