@@ -75,7 +75,8 @@ body:not(.play) #tutc{display:none}
 body:not(.play) #hud,body:not(.play) #stk,body:not(.play) #fb{display:none}
 #skip{display:none;position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif}
 #tutSkip{display:none;position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif} /* チュートリアルを丸ごと飛ばすボタン（左上）。見本と実践の間ずっと出る */
-body.play.tut #tutSkip{display:block}
+body.play.tut #tutSkip,body.play.free #tutSkip{display:block}
+body.free #hp{display:none} /* 自由に試すパート：ライフの概念がないのでハートは出さない */
 body.test.play #skip{display:block} /* テストモード中のプレイ画面だけ表示 */
 #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:20;color:#fff;font-family:Rajdhani,system-ui,sans-serif;
   background:radial-gradient(ellipse at 50% 38%,#1c2750 0%,#0b1020 55%,#070a12 100%)}
@@ -651,7 +652,7 @@ const pickEl=document.getElementById('pick');
 function openPick(){overEl.style.display='none';if(!TEST_MODE){testPick='default';runGame();return;}pickEl.style.display='flex';} // 通常プレイでは選択画面を出さず、そのままスタート
 const skipBtn=document.getElementById('skip');
 skipBtn.addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];if(sc&&sc.skipStage)sc.skipStage();});
-document.getElementById('tutSkip').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&sc.tutOn)sc.tutSkip();}); // 左上のSkip：チュートリアル全体を飛ばす（見本の最中でも実践の途中でも）。タップで音声も起動するので、イベントは止めない
+document.getElementById('tutSkip').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&(sc.tutOn||sc.free))sc.tutSkip();}); // 左上のSkip：チュートリアル全体を飛ばす（見本の最中でも実践の途中でも）。タップで音声も起動するので、イベントは止めない
 function runGame(){const sc=game.scene.scenes[0];fireQ=false;kfire=false;setScreen('play');if(sc)sc.scene.restart();}
 function startGame(){openPick();}
 function goHome(){overEl.style.display='none';setScreen('home');}
@@ -935,7 +936,7 @@ class Main extends Phaser.Scene{
     this.cameras.main.setBackgroundColor(0x101728);
     this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=TUT_TURN_T+TUT_GOAL_T;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
     this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
-    document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    this.free=false;document.body.classList.remove('free');document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
 
     if(!this.textures.exists('spark')){
       const tg=this.make.graphics({x:0,y:0,add:false});
@@ -968,7 +969,7 @@ class Main extends Phaser.Scene{
   updHud(){
     {const hf='<svg class="hh" viewBox="4 4.8 16 16.2"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="currentColor"/></svg>',he='<svg class="hh" viewBox="4 4.8 16 16.2"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',cr='<svg class="hh pl" viewBox="3 3 18 18"><path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z" fill="currentColor"/></svg>';
     hpEl.innerHTML=hf.repeat(Math.max(0,this.php))+he.repeat(Math.max(0,this.maxhp-this.php))+cr.repeat(Math.max(0,this.rev));} // ハートは文字ではなくSVGで描く（♥＝塗り・♡＝輪郭・✚＝復活）
-    stgEl.textContent=(this.e&&this.e.type==='boss'?'BOSS　':'')+'STAGE '+this.stage;
+    stgEl.textContent=(this.e&&this.e.type==='boss'?'BOSS　':'')+(this.free?'PRACTICE':'STAGE '+this.stage);
   }
   msg(t){msgEl.textContent=t;msgEl.style.opacity=1;this.msgT=1.4;} // 「BOSS」「STAGE n」の表示用
   note(t){} // それ以外の画面上部の説明文は出さない
@@ -990,8 +991,14 @@ class Main extends Phaser.Scene{
   }
   tutEnd(){ // 的が壊れた：チュートリアル完了（二度と出ないようにセーブ）。このあとSTAGE1へ進む
     if(this.demo){this.demoEndT=1.4;return;} // 見本：セーブせず、「Your turn!」を少し見せてから本物のチュートリアルへ
-    this.tutOn=false;save.tut=1;persist();
+    this.tutOn=false;this.free=true;document.body.classList.add('free'); // このあと自由に試すパート（ステージ1と同じ・敵は攻撃しない・ライフなし）。完了のセーブはfreeEndかSkipで
     document.body.classList.remove('tut','tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    this.combo=0;this.comboT=0;comboEl.style.opacity=0;
+  }
+  freeEnd(){ // 自由に試すパートの敵を倒した：チュートリアル完了（二度と出ないようにセーブ）。このあと本物のSTAGE1が始まる
+    this.free=false;save.tut=1;persist();document.body.classList.remove('free');
+    this.kills=-1;this.log=[];this.runMax=0; // 練習の分は数えない（このあとのkills++で0になる）
+    this.stage--; // このあとのstage++で、ちょうどSTAGE1から始まる
     this.combo=0;this.comboT=0;comboEl.style.opacity=0;
   }
   demoStep(dr){ // 見本：チュートリアルの流れ（撃つ→引く→走って壁にぶつける）を、スローなしの普通の速さで自動で通して見せる
@@ -1123,7 +1130,7 @@ class Main extends Phaser.Scene{
     }else{
       const TY=['norm','chaser','eyes','beamer','clam'],POOL=TY.filter(t=>this.stage>=({eyes:3,beamer:6,clam:6}[t]||1)),N=pk?1:ENEMY_N(this.stage),list=[]; // 出る種類：目玉の敵はSTAGE3から、ロングビームの敵と貝はSTAGE6から
       for(let k=0;k<N;k++){ // 通常ステージは数体まとめて出る（種類はそれぞれランダム）
-        const type=TY.includes(pk)?pk:POOL[Math.floor(Math.random()*POOL.length)],mx=Math.max(20,Math.round((100+ENEMY_HP_SLOPE*(this.stage-1))*ENEMY_HP_K[N]*(type==='chaser'?0.75:1)));
+        const type=TY.includes(pk)?pk:this.free?'norm':POOL[Math.floor(Math.random()*POOL.length)],mx=Math.max(20,Math.round((100+ENEMY_HP_SLOPE*(this.stage-1))*ENEMY_HP_K[N]*(type==='chaser'?0.75:1)));
         let sx=AR.sx,sy=AR.sy;
         if(N>1){const a=this.spawnA0+Math.PI*2*k/N,pt=arIn(AR.sx+Math.cos(a)*ER*2.2,AR.sy+Math.sin(a)*ER*2.2,ER);sx=pt.x;sy=pt.y;} // 重ならないよう、出現位置を輪にして散らす
         let e;
@@ -1135,7 +1142,7 @@ class Main extends Phaser.Scene{
         list.push(e);this.hitE.explode(20,sx,sy);
       }
       this.es=list;this.e=list[0];this.hpMax0=list.reduce((a,x)=>a+x.max,0); // HPバーの最大値＝ステージ開始時の敵のHP合計
-      if(this.stage>=1)this.msg('STAGE '+this.stage);
+      if(this.stage>=1)this.msg(this.free?'FREE PRACTICE':'STAGE '+this.stage);
     }
     if(!this.es.length)this.es=[this.e]; // ボスは1体
     {const p=at(this.s);for(const e of this.es)e.a=Math.atan2(p.y-e.y,p.x-e.x);} // スポーン時は自機の方を向く
@@ -1179,7 +1186,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');}this.note('DEFEATED!!');
       return;
     }
-    if(e.tut)this.tutEnd();this.e=null;this.bul=[];this.resT=boss?2.6:1.8;this.kills++;this.stage++;if(boss)this.upgT=1.5; // ボス撃破の余韻のあと、三択を出す
+    if(e.tut)this.tutEnd();else if(this.free)this.freeEnd();this.e=null;this.bul=[];this.resT=boss?2.6:1.8;this.kills++;this.stage++;if(boss)this.upgT=1.5; // ボス撃破の余韻のあと、三択を出す
     if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');}
     this.note(boss?'BOSS DOWN!!':'DEFEATED!!');
   }
@@ -1481,14 +1488,15 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   /* --- 自機がダメージ --- */
   hurt(q){
     const e=this.e,p=q.p,cam=this.cameras.main;
-    this.php--;this.inv=1.6;this.slowT=0;this.slowLen=0;this.slowCD=SLOW_CD;this.combo=0;this.comboT=0;comboEl.style.opacity=0;
+    if(!this.free)this.php--; // 自由に試すパート：演出だけでライフは減らない
+    this.inv=1.6;this.slowT=0;this.slowLen=0;this.slowCD=SLOW_CD;this.combo=0;this.comboT=0;comboEl.style.opacity=0;
     const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;
     e.vx=dx/d*650;e.vy=dy/d*650;
     if(this.h)this.h.st='back';
     for(const x of this.ex)x.h.st='back';
     this.reeling=false;
     cam.shake(300,0.02);cam.flash(200,255,50,70);
-    const lethal=this.php<=0&&this.rev<=0;
+    const lethal=!this.free&&this.php<=0&&this.rev<=0;
     this.freeze=lethal?0.5:0.22;this.punch=lethal?0.22:0.16;if(e)e.flash=1; // ヒットストップ：やられる時は特に長く止めて、何に当たったかを見せる
     if(lethal){cam.shake(600,0.035);this.softFlash(260,255,60,80,0.45);}
     sfx(140,40,0.45,0.5,'sawtooth');
@@ -1696,7 +1704,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       e.next-=STEP;
       if(e.next<=0){
         e.next=rnd(1.4,2.8);
-        if(!st&&Math.random()<0.4)e.tele=0.6;
+        if(!st&&!this.free&&Math.random()<0.4)e.tele=0.6;
         else{const a=rnd(0,6.283),sp=(110+15*this.stage)*(st?0.4:1);e.vx+=Math.cos(a)*sp;e.vy+=Math.sin(a)*sp;}
       }
     }
