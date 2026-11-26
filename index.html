@@ -302,9 +302,9 @@ const EYE_PR=17,EYE_COL=0xc77dff; // 目玉の敵：黒目の半径・黒目と�
 const EYE_CHG=0.55,EYE_EMIT=0.5,EYE_PO=ER-EYE_PR-5; // 目：撃つ前に黒目が光る時間(秒)／黒目から光線が出続ける時間(秒)／黒目の中心までの距離
 const LASER_WHITE=0.55,LASER_THICK=1.35; // 光線（プリズム風）：元の色を白へ寄せる割合（0〜1）／光の太さの倍率（見た目だけ。当たり判定は変わらない）
 const BM_COL=0xff9a3c,BM_HIT=0xffd9a8,BM_CHG=1.1,BM_EMIT=1.5,BM_BV=900,BM_WAIT=2.6,BM_DIE=0.18,BM_SHAKE=3; // ロングビームの敵：光線と黒目の色・当たった点の色／溜め(秒)／ビームを出し続ける時間(秒)／ビームの速さ(px/秒)／撃ったあとの待ち(秒)／銛で消える時の光る時間(秒)／振動の幅(px)
-const TUT_MIN=0.03,TUT_KB=190,TUT_PULL_K=1,TUT_DRAG=2600,TUT_PULLS=3,TUT_RUN_T=1.3,TUT_SLOW0=0.23; // TUT_SLOW0＝引くたび（1〜3回目）のスローの始まりの強さ（小さいほど強い。ここからだんだん遅くなって止まる） // チュートリアル：ほぼ止まっている間の時間の進み／刺さった時に敵が銛の向きへ吹き飛ぶ速さ／引く力の倍率（本物の巻き取りの何倍か）／走り出した後、敵をレールへ引き込む加速度／引く回数／走らせてから、ぶつからなくても撃破にするまでの秒数
+const TUT_MIN=0.03,TUT_KB=190,TUT_PULL_K=1,TUT_DRAG=2600,TUT_PULLS=2,TUT_RUN_T=1.3,TUT_SLOW0=0.23; // TUT_SLOW0＝引くたび（1〜3回目）のスローの始まりの強さ（小さいほど強い。ここからだんだん遅くなって止まる） // チュートリアル：ほぼ止まっている間の時間の進み／刺さった時に敵が銛の向きへ吹き飛ぶ速さ／引く力の倍率（本物の巻き取りの何倍か）／走り出した後、敵をレールへ引き込む加速度／引く回数／走らせてから、ぶつからなくても撃破にするまでの秒数
 const TUT_TURN_T=2,TUT_GOAL_T=4; // 実践の始まり：最初に「Your turn!」を見せる時間(秒)／そのあと「Goal: …」を見せる時間(秒)。この合計の間は、まだ撃てない（読む時間）
-const DEMO_WAIT=0.9,DEMO_PULLS=[0.35,0.47,0.59],DEMO_RUN_AT=0.62,DEMO_RUN_T=0.5,DEMO_MAX=30,DEMO_PULL_K=1; // 見本の台本（銛が刺さってからの秒数）：引くボタンを押す時刻（0.12秒おきの連打）／横へ避け始める時刻／避けて動く長さ(秒)。毎回同じ動きにするための固定値で、避けるのが早すぎ・遅すぎる時はDEMO_RUN_ATを、勢いはDEMO_PULL_Kを調整／万一止まっても、この秒数で本物のチュートリアルへ進む／引く力の倍率（1＝本編と同じ）
+const DEMO_WAIT=0.9,DEMO_PULLS=[0.35,0.47],DEMO_RUN_AT=0.5,DEMO_RUN_T=0.5,DEMO_MAX=30,DEMO_PULL_K=1; // 見本の台本（銛が刺さってからの秒数）：引くボタンを押す時刻（0.12秒おきの連打）／横へ避け始める時刻／避けて動く長さ(秒)。毎回同じ動きにするための固定値で、避けるのが早すぎ・遅すぎる時はDEMO_RUN_ATを、勢いはDEMO_PULL_Kを調整／万一止まっても、この秒数で本物のチュートリアルへ進む／引く力の倍率（1＝本編と同じ）
 const TUT_TOUCH=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
 const SLOW_AHEAD=0.25,SLOW_V=0.35,SLOW_MAX=1.0,SLOW_CD=1.5; // スローモーション：光線が自機に当たりそうな（この秒数以内に当たる）とき、時間の進みがSLOW_V倍になる。最長SLOW_MAX秒で、終わったらSLOW_CD秒は再発動しない
 const EYE_BV=520,EYE_BN=4,EYE_LEN=160; // 光線の速さ(px/秒)・壁で跳ね返れる回数・光線の長さ(px)
@@ -1893,7 +1893,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(vr<PULLMAX*kk){const a=Math.min(PULLA*kk*STEP,PULLMAX*kk-vr)/(e.m||1)/(1+rc*rc/EIo);e.vx+=nx*a;e.vy+=ny*a;e.w=clamp(e.w+rc*a/EIo,-20,20);}
     }
     // 移動
-    const dm=Math.exp(-(e.tut&&this.tp!=='pull'&&this.tp!=='move'?1.6:0.5)*STEP);e.vx*=dm;e.vy*=dm; // チュートリアルの敵は、引く間だけ実際のプレイと同じ減衰（それ以外は勢いがすぐ収まる）
+    const dm=Math.exp(-(e.tut&&!this.demo&&this.tp!=='pull'&&this.tp!=='move'?1.6:0.5)*STEP);e.vx*=dm;e.vy*=dm; // チュートリアルの敵は、引く間だけ実際のプレイと同じ減衰（それ以外は勢いがすぐ収まる）。見本は引いた後も実際のプレイと同じ減衰で、勢いを保ったまま壁へ飛ぶ
     const sp=Math.hypot(e.vx,e.vy);if(sp>1400){e.vx*=1400/sp;e.vy*=1400/sp;}
     e.x+=e.vx*STEP;e.y+=e.vy*STEP;
     e.a+=e.w*STEP;e.w*=Math.exp(-0.6*STEP);
