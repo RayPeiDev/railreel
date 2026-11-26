@@ -274,7 +274,7 @@ function pose(s,rc,tx,ty){
 /* ===== 調整用の定数 ===== */
 const ER=32,EI=ER*ER*2; // 敵の半径／EI＝敵の回転しにくさ
 const LMIN=12; // 刺さった銛が縮められる最短の長さ（敵を引き寄せる時、銛が伸縮して敵が自機まで届く）
-const LEN=94,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
+const LEN=94,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00091,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
 const TURN_K=36; // 切り返し時の速度の追従の速さ（通常は14。大きいほど素早く反転する）
 const SPEED=330;          // 自機のレール上の速さ
 const RMAX=1000,NSEG=24;   // ロープの最大長・分割数
@@ -2721,7 +2721,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     const lv=RAIL.open?lineView(W,H,AR.rect):null,zb=lv?lv.z:Math.min(ZOOM_RATE*H,W/VIEW_W),z=zb*(1+this.punch); // 直線はlineViewの大きさ
     cam.setZoom(z);
     if(RAIL.open){cam.setRotation(0);cam.centerOn(0,lv.cy);} // 直線：回さず、横は中央に固定
-    else{const dd=Math.hypot(p.x,p.y)||1,dx=-p.x/dd,dy=-p.y/dd;cam.setRotation(-Math.PI/2-Math.atan2(dy,dx));cam.centerOn(p.x*0.35,p.y*0.35);}
+    else{const dd=Math.hypot(p.x,p.y)||1,dx=-p.x/dd,dy=-p.y/dd;cam.setRotation(-Math.PI/2-Math.atan2(dy,dx));cam.centerOn(0,0);} // アリーナの中心を画面の真ん中に置く（自機は回転で常に下側。以前は自機寄りに0.35ずらしていた）
     for(const t of this.dmgT){ // ダメージ数値：ドンと大きく出て縮み（ばね）、上へ少し昇りながら、後半で薄くなって消える。画面に対して正立・画面上で同じ大きさ
       t.age+=dr;const a=t.age,u=Math.min(1,a/0.16),e3=1-Math.pow(1-u,3);
       let pop=(t.big?2.3:1.9)-((t.big?2.3:1.9)-1)*e3; // 大きく出て1に落ち着く
