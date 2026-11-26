@@ -662,7 +662,7 @@ async function stSend(){
   const sec=Math.min(ST.sec,60),plays=Math.min(ST.plays,20);ST.sec=0;ST.plays=0; // 送れなかった分は捨てる（なくてもいい機能）
   try{
     const D=ST.D,w=[];
-    if(sec)w.push(D.set(D.ref(ST.db,'stats/totalSeconds'),D.increment(sec)));
+    if(sec)w.push(D.set(D.ref(ST.db,'stats/totalMinutes'),D.increment(sec/60)));
     if(plays)w.push(D.set(D.ref(ST.db,'stats/totalPlays'),D.increment(plays)));
     await Promise.race([Promise.all(w),new Promise((_,j)=>setTimeout(j,8000))]);
     ST.bad=0;
