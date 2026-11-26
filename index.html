@@ -314,7 +314,7 @@ const REEL_MAX=1.0;       // グイッと引く強さ（引く力・最高速に
 const TAUT_T=0.3; // 引いた後、紐がたるまずに本当にピンと張っている時間(秒)
 const JERK_T=0.15,JERK_CD=0; // 1回のグイッの長さ(秒)／次に引けるまでの間(秒、0＝制限なし)
 const REST=0.8;           // 壁の反発（大きいほどよく跳ねる）【変更：元は0.88。空気抵抗0でも、壁に当たるたびに勢いが減るようにするため】
-const MISS_V=170,MISS_SAFE=0.7; // 引きミス（刺さった敵が自機に触れた時）：敵が離れていく速さ（HIT_MIN未満に）／自機に触れても何も起きない猶予(秒)
+const MISS_V=1100,MISS_SAFE=0.7,MISS_DRAG=3.5,MISS_END=60; // 引きミス（刺さった敵が自機に触れた時）：敵が離れていく初速（速い）／自機に触れても何も起きない猶予(秒)／すぐ減衰する強さ／止まったとみなす速さ。壁に当たるとそこで止まる（ダメージ・コンボなし）
 const HIT_MIN=300;        // これ未満の速さの衝突はダメージ・コンボにならない
 const DRIFT_BOUNCE=0.14;  // 壁に当たった銛の跳ね返り（飛ぶ速さに対する割合）
 const DRIFT_DAMP=0.9;     // 漂う銛の減速（大きいほどすぐ止まる）
@@ -1599,6 +1599,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     return{x:e.x+h.offT.x*c-h.offT.y*s+Math.cos(ang)*k,y:e.y+h.offT.x*s+h.offT.y*c+Math.sin(ang)*k};
   }
   embed(tx,ty,tg,arm){ // 銛が敵（ボスの盾・ちぎれた盾を含む）に突き刺さった
+    if(tg)tg.miss=false;
     const e=tg,h=this.h,cam=this.cameras.main;
     h.tg=e;h.arm=arm===undefined?-1:arm;
     const ax=tx+h.ux*16,ay=ty+h.uy*16,c=Math.cos(e.a),s=-Math.sin(e.a),lx=ax-e.x,ly=ay-e.y;
@@ -1823,7 +1824,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   pullMiss(q,e){ // 引きミス：銛が弾かれて回収され、敵はゆっくり離れていく。壁に叩きつけた時の演出（揺れ・止まる間・コンボ）は一切なし
     const p=q.p,dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;
     let ux=dx/d+q.nx,uy=dy/d+q.ny;const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul; // 自機から離れる向き＋内側（壁の反対）へ
-    e.vx=ux*MISS_V;e.vy=uy*MISS_V;e.w=rnd(-1.5,1.5);e.safeT=MISS_SAFE; // 速さはHIT_MIN未満：壁に当たってもダメージ・コンボにならない
+    {const mv=MISS_V*(e.type==='boss'?0.5:1);e.vx=ux*mv;e.vy=uy*mv;}e.w=rnd(-1.5,1.5);e.safeT=MISS_SAFE;e.miss=true; // 速く飛んですぐ減衰（stepBody）。壁に当たるとそこで止まり、ダメージ・コンボにならない
     if(this.h)this.h.st='back';
     for(const x of this.ex)x.h.st='back';
     this.jerkT=0;this.reeling=false;
@@ -2130,6 +2131,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   /* --- 物理（敵本体・ちぎれた盾で共通）：巻き取り・移動・ロープ拘束・壁バウンド --- */
   stepBody(o,q){
     const e=o,h=this.h,st=!!h&&h.st==='stuck'&&h.tg===o,EIo=e.I||e.r*e.r*2;
+    if(e.miss){const k=Math.exp(-MISS_DRAG*STEP);e.vx*=k;e.vy*=k;e.w*=k;if(Math.hypot(e.vx,e.vy)<MISS_END)e.miss=false;} // 引きミス後：すぐ減衰
     const tug=st&&o.type==='boss'&&!(o.limp>0); // 綱引き中：ボスは自機と反対へ引き返し、連打1回ごとに自機側へ引かれる（本体は力が抜けている間だけ普通に引ける）
     if(tug){
       const T=this.tail(),dx=q.pvx-T.x,dy=q.pvy-T.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
@@ -2189,7 +2191,8 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const w=arPush(e.x,e.y,e.r);if(!w)break;
       e.x-=w.nx*w.pen;e.y-=w.ny*w.pen;
       const vn=e.vx*w.nx+e.vy*w.ny;
-      if(vn>0&&spin){ // 完全な鏡面反射（ブレ・減衰・回転なし）。ダメージ・コンボにはならず、画面だけ揺れる。当たるのは本体だけ（盾は壁をすり抜ける）
+      if(vn>0&&e.miss){e.vx=0;e.vy=0;e.w=0;e.miss=false;} // 引きミスで飛んだ敵は、壁に当たったらそこで止まる（ダメージ・コンボなし）
+      else if(vn>0&&spin){ // 完全な鏡面反射（ブレ・減衰・回転なし）。ダメージ・コンボにはならず、画面だけ揺れる。当たるのは本体だけ（盾は壁をすり抜ける）
         e.vx-=2*vn*w.nx;e.vy-=2*vn*w.ny;this.hitE.explode(6,e.x+w.nx*e.r,e.y+w.ny*e.r);this.cameras.main.shake(160,0.01);
       }else if(vn>0&&e.crystal){ // 結晶：きれいに反射して、貝のシールドに銛が弾かれた時と同じ音（ダメージ・コンボなし）
         e.vx-=(1+CRY_REST)*vn*w.nx;e.vy-=(1+CRY_REST)*vn*w.ny;e.w=clamp(e.w+(Math.random()-0.5)*2,-4,4);
