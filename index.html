@@ -167,7 +167,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="shop"><div id="shopTop"><button id="shopBack" class="pill" type="button">Back</button><div class="coinBox"><i class="cn"></i><span id="shopCoin">0</span></div></div><div id="shopRow"></div></div>
 <div id="zk"><div id="zkTop"><button id="zkBack" class="pill" type="button">Back</button><div id="zkT">Upgrade Codex</div><div id="zkCnt"></div></div><div id="zkList"></div></div>
 <div id="upg"><div id="upgT"></div><div id="upgHp"></div><div id="upgRow"></div><button id="upgRr" type="button"></button></div>
-<div id="pick" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.88);flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font:16px Rajdhani,system-ui,sans-serif"></div>
+<div id="pick" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.88);flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:12px 0;box-sizing:border-box;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;color:#fff;font:16px Rajdhani,system-ui,sans-serif"></div>
 <div id="home">
   <div id="ttl"><span>R</span><span>a</span><span>i</span><span>l</span><br><span>R</span><span>e</span><span>e</span><span>l</span></div>
   <div id="menu">
@@ -307,8 +307,12 @@ const DRIFT_DAMP=0.9;     // 漂う銛の減速（大きいほどすぐ止まる
 const DRIFT_WOBBLE=70;    // 漂う銛のふらつき
 const LASER_KB=1500; // レーザーで刺された敵が吹き飛ぶ速さの基準（爆弾のBOMB_KBより少し強め。重い敵ほど控えめ）
 const KB_V=320;         // 銛が刺さった時に敵が押される速さ（px/秒）
-const EPAL={norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a}}; // 敵の種類ごとの見た目（トゲの数・色）
+const EPAL={norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a},gboss:{n:10,c1:0x9aa3b2,c0:0x1d2028,c2:0xc9d0dc}}; // 敵の種類ごとの見た目（トゲの数・色）
 const SHAPES=['line','square','circle','tri']; // ステージ5つごとに、この順で変わる（直線→四角形→円→三角形→直線…）
+const BOSS_AT={5:'boss',10:'eboss',15:'gboss'}; // ボスをステージごとに固定：STAGE5＝盾のボス(boss)、STAGE10＝ビームのボス(eboss)、STAGE15＝ガラスのボス(gboss)。表にないステージは、これまでどおり5ステージごとに出る（10の倍数＝ビームのボス、それ以外の5の倍数＝盾のボス）。ここに足せばステージごとに指定できる
+const GL_MAX=6,GL_SW=0.8,GL_KR=20; // ガラスのボス：小さい敵が同時にいられる数／玉が膨らんで分離するまでの時間(秒)／小さい敵の半径
+const startStage=()=>({boss:5,eboss:10,gboss:15}[testPick])||(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1); // 開始ステージ：テストの選択画面でボスを選んだ時は、そのボスが出るステージから始まる（盾5・ビーム10・ガラス15）。URLの?boss ?ebossも同じ
+const bossFor=st=>BOSS_AT[st]||(st%10===0?'eboss':st%5===0?'boss':null);
 const TEST_MODE=(()=>{try{const v=localStorage.getItem('railreel.test');return v==='1';}catch(e){return false;}})(); // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）。タイトルの文字を EERIE LAIR の順にタップするたびに切り替わる（保存して再読み込み。何も保存されていない時はfalse＝通常モード）
 if(TEST_MODE)document.body.classList.add('test');
 const TEST_URL=TEST_MODE?location.search:''; // テストモードでなければURLの指定は無視する
@@ -632,7 +636,7 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0;if(e.key===' ')kfire=false;});
 // iPhoneの長押し拡大鏡・選択・メニューを抑止
-const stop=e=>{if(e.target.closest&&e.target.closest('#shopRow,#zkList'))return;e.preventDefault();}; // ショップの横スクロールと、図鑑の縦スクロールだけは許可
+const stop=e=>{if(e.target.closest&&e.target.closest('#shopRow,#zkList,#pick'))return;e.preventDefault();}; // ショップの横スクロールと、図鑑・テスト用の敵選択画面の縦スクロールだけは許可
 ['touchstart','touchmove','contextmenu','selectstart','gesturestart','dragstart'].forEach(t=>document.addEventListener(t,stop,{passive:false}));
 function inputX(){
   const v=stickId!==null?sx:((keys.arrowright||keys.d)?1:0)-((keys.arrowleft||keys.a)?1:0);
@@ -731,9 +735,9 @@ function toast(t){toastEl.textContent=t;toastEl.classList.add('on');clearTimeout
 /* --- テスト用：STAGE1で出す敵の選択画面（プレイ／リトライの後に出る。ユーザーには見せない） --- */
 const pickEl=document.getElementById('pick');
 { // ステージの形状（最初のステージの形。選んだ形から始まり、5ステージごとに 直線→四角形→円→三角形 の順に変わる）
-  const lab=(t)=>{const d=document.createElement('div');d.textContent=t;d.style.cssText='opacity:.7;font-size:13px;margin-top:4px';pickEl.appendChild(d);};
+  const lab=(t)=>{const d=document.createElement('div');d.textContent=t;d.style.cssText='opacity:.7;font-size:13px;margin-top:4px;flex:none';pickEl.appendChild(d);};
   lab('Stage shape');
-  const row=document.createElement('div');row.style.cssText='display:flex;gap:6px';pickEl.appendChild(row);
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:6px;flex:none';pickEl.appendChild(row);
   const bs=[];
   const refresh=()=>bs.forEach(([k,b])=>{const on=k===testShape;b.style.borderColor=on?'#ffb347':'#888';b.style.background=on?'#4a3a1a':'#223';});
   [['default','Default'],['line','Line'],['square','Square'],['circle','Circle'],['tri','Triangle']].forEach(([k,t])=>{
@@ -743,11 +747,12 @@ const pickEl=document.getElementById('pick');
   refresh();
   lab('Enemy (tap to start)');
 }
-[['default','Default'],['norm','Normal'],['chaser','Chaser'],['eyes','Laser Grunt'],['beamer','Long Beam'],['clam','Shell'],['boss','Shield Boss'],['eboss','Laser Boss'],['home','Home']].forEach(([k,t])=>{
-  const b=document.createElement('button');b.textContent=t;b.style.cssText='width:200px;padding:12px;font:inherit;border-radius:8px;border:1px solid #888;background:#223;color:#fff';
+[['default','Default'],['norm','Normal'],['chaser','Chaser'],['eyes','Laser Grunt'],['beamer','Long Beam'],['clam','Shell'],['boss','Shield Boss'],['eboss','Laser Boss'],['gboss','Glass Boss'],['home','Home']].forEach(([k,t])=>{
+  const b=document.createElement('button');b.textContent=t;b.style.cssText='width:200px;padding:9px;flex:none;font:inherit;border-radius:8px;border:1px solid #888;background:#223;color:#fff';
   b.addEventListener('pointerup',()=>{pickEl.style.display='none';if(k==='home'){goHome();return;}testPick=k;runGame();});
   pickEl.appendChild(b);
 });
+pickEl.firstElementChild.style.marginTop='auto';pickEl.lastElementChild.style.marginBottom='auto'; // 画面に収まる時は上下中央、収まらない時は上から並べてスクロール
 function openPick(){overEl.style.display='none';if(!TEST_MODE){testPick='default';runGame();return;}pickEl.style.display='flex';} // 通常プレイでは選択画面を出さず、そのままスタート
 const skipBtn=document.getElementById('skip');
 skipBtn.addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];if(sc&&sc.skipStage)sc.skipStage();});
@@ -1115,10 +1120,10 @@ class Main extends Phaser.Scene{
   create(){
     paused=false;document.body.classList.remove('paused');this.time.paused=false;this.tweens.resumeAll();
     this.tutOn=!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL); // チュートリアル中（初めて・テストの敵指定なし）
-    setShape(this.tutOn?'line':shapeFor(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1),this.scale.width,this.scale.height);
+    setShape(this.tutOn?'line':shapeFor(startStage()),this.scale.width,this.scale.height);
     this.s=RAIL.s0;this.vel=0;this.acc=0;this.freeze=0;this.punch=0;this.ts=1;this.slowT=0;this.slowLen=0;this.slowCD=0;this.recoil=0;this.cool=0;this.hcool=0;
     this.h=null;this.ex=[];this.ld=[0,0,0];this.rope=null;this.ropeLen=0;this.holdT=0;this.reeling=false;this.taut=false;this.lbl='';
-    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1;this.kills=0;this.runMax=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
+    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:startStage();this.kills=0;this.runMax=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
     this.es=[];(this.dmgT||[]).forEach(t=>t.destroy());this.dmgT=[];this.combo=0;this.comboT=0;this.wallF=0;this.imps=[];this.shards=[];this.fwk=[];this.fwf=[];this.chunks=[];this.resT=0;this.msgT=0;this.yankC=0;
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
     this.rerolls=1;this.mv=1;this.rest=REST;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
@@ -1307,15 +1312,21 @@ class Main extends Phaser.Scene{
     const sn=this.stage<1?'line':shapeFor(this.stage);if(sn!==RAIL.name)this.changeShape(sn);
     this.pieces=[];this.bul=[];this.es=[];this.spawnA0=rnd(0,6.283);
     const pk=this.stage===1?testPick:null; // STAGE1だけ選択画面の指定に従う
+    const bk=(pk==='boss'||pk==='eboss'||pk==='gboss')?pk:bossFor(this.stage); // 今回出すボス（テストの指定があればそれ、なければステージごとの固定）
     if(this.tutOn&&this.stage===0){ // チュートリアルの的：直線レールの真上で止まっていて、攻撃もしない。壁に1回ぶつかれば壊れる
       const e={type:'norm',tut:true,r:ER,x:AR.sx,y:(AR.rect?(AR.rect.y0+AR.sy)/2:AR.sy),vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false}; // 見るパートも実践パートも同じ初期位置（画面の真ん中と上端の、ちょうど真ん中あたり）
       this.es=[e];this.e=e;this.hitE.explode(20,AR.sx,AR.sy);
-    }else if(pk==='eboss'||this.stage%10===0){ // 新ボス：向きだけ固定（位置は動く）。左右に砲台（目玉の敵）が一個ずつ
+    }else if(bk==='eboss'){ // 新ボス：向きだけ固定（位置は動く）。左右に砲台（目玉の敵）が一個ずつ
       const mx=Math.round((100+35*(this.stage-1))*1.4);
       this.e={type:'boss',kind:'eyes',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1.5,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,
         arms:[0,1].map(i=>({alive:true,tear:0,flash:0,fire:1.2+i*3,chg:0}))}; // 左右が3秒ずつずれて、交互に撃つ
       this.hitE.explode(40,AR.sx,AR.sy);this.msg('BOSS');
-    }else if(pk==='boss'||this.stage%5===0){ // ボス：前に盾を構えて本体を守っている
+    }else if(bk==='gboss'){ // ガラスのボス：灰色の身体の中で、オレンジに光る玉がグニョグニョ動く。玉から一部が膨らんで分離し、小さい光の玉になって、冷めて固まり小さい敵になる（綱引き中も続ける）
+      const mx=Math.round((100+35*(this.stage-1))*1.4);
+      this.e={type:'boss',kind:'glass',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,sp:0,spK:0,spA:0,gt:0,cg:0,bw:1.2,sj:0,
+        arms:[{alive:false,tear:0,flash:0},{alive:false,tear:0,flash:0}]};
+      this.hitE.explode(40,AR.sx,AR.sy);this.msg('BOSS');
+    }else if(bk==='boss'){ // ボス：前に盾を構えて本体を守っている
       const mx=Math.round((100+35*(this.stage-1))*1.4);
       this.e={type:'boss',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:2.2,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,sp:0,spK:0,spA:0,
         arms:[{alive:true,tear:0,flash:0},{alive:true,tear:0,flash:0}]};
@@ -1342,7 +1353,7 @@ class Main extends Phaser.Scene{
     this.updHud();
   }
   breakEnemy(e){ // 敵が破片になって砕け散る：貝の盾・ボスのパーツと同じ、細かいガラスの欠片（shards）。数は体の大きさに比例
-const pal=e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm),r=e.r||ER,cs=[pal.c2,0xffffff,pal.c1,0x9fb0d6]; // 砲台のボスは紫の破片
+const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm),r=e.r||ER,cs=[pal.c2,0xffffff,pal.c1,0x9fb0d6]; // 砲台のボスは紫の破片
 const n=clamp(Math.round(64*Math.PI*r*r/(4*CL_S*CL_S)),36,110);
 for(let i=0;i<n;i++){
 const th=rnd(0,6.283),rr=r*Math.sqrt(Math.random()),x=e.x+Math.cos(th)*rr,y=e.y+Math.sin(th)*rr,a=Math.atan2(y-e.y,x-e.x)+rnd(-0.4,0.4),sp=rnd(250,760);
@@ -1361,6 +1372,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(!e||e.dead)return;
     const cam=this.cameras.main,boss=e.type==='boss';
     e.dead=true;this.es=this.es.filter(x=>x!==e);
+    if(e.kind==='glass'){for(const m of this.es)if(m.mn){m.dead=true;this.breakEnemy(m);}this.es=this.es.filter(x=>!x.mn);} // ガラスのボスを倒したら、小さい敵も一緒に砕ける
     this.hitE.explode(boss?220:110,e.x,e.y);
     cam.shake(boss?800:450,0.025);this.softFlash(250,255,255,255,0.35);
     this.punch=0.45; // 画面は止めない
@@ -1372,11 +1384,11 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       h.ang=h.rel+e.a;h.dvx=e.vx*0.35+rnd(-40,40);h.dvy=e.vy*0.35+rnd(-40,40);h.dw=rnd(-3,3);h.trail.length=0;
       this.jerkT=0;this.reeling=false;h.st='drift';h.tg=null;
     }else if(h&&h.st!=='back'&&!(h.st==='stuck'&&this.es.includes(h.tg)))h.st='back'; // 別の敵に刺さっている銛はそのまま
-    this.log.push(e.kind==='eyes'?'eboss':e.type);
+    if(!e.mn)this.log.push(e.kind==='eyes'?'eboss':e.kind==='glass'?'gboss':e.type);
     if(this.es.length){ // まだ敵が残っている：ステージは進まない
       for(const b of this.bul)if(b.owner===e&&b.dy===undefined){b.dy=BM_DIE;b.vx=b.vy=0;b.emit=0;}
-      this.e=this.es[0];this.kills++;this.pickFocus();
-      if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');}this.note('DEFEATED!!');
+      this.e=this.es[0];if(!e.mn)this.kills++;this.pickFocus();
+      if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');}if(!e.mn)this.note('DEFEATED!!');
       return;
     }
     if(e.tut)this.tutEnd();else if(this.free)this.freeEnd();this.e=null;this.bul=[];this.resT=boss?2.6:1.8;this.kills++;this.stage++;if(boss)this.upgT=1.5; // ボス撃破の余韻のあと、三択を出す
@@ -1900,7 +1912,8 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   stepOne(q){
     const e=this.e,h=this.h,st=!!h&&h.st==='stuck'&&h.tg===e;
     if(e.type==='boss'){if(e.limp>0)e.limp=Math.max(0,e.limp-STEP);else e.grip=Math.max(0,(e.grip||0)-GRIP_DECAY*STEP);} // 本体の連打ゲージは時間で戻る
-    if(e.type==='boss'){if(e.kind==='eyes')this.eyeBossAI(q,e,st);else this.bossAI(q,e,st);}
+    if(e.cool>0){e.cool-=STEP;const k=Math.exp(-3*STEP);e.vx*=k;e.vy*=k;} // 分離したばかりの小さい敵：高熱で光っている間は、動きが止まっていき、攻撃もしない
+    else if(e.type==='boss'){if(e.kind==='eyes')this.eyeBossAI(q,e,st);else if(e.kind==='glass')this.glassBossAI(q,e,st);else this.bossAI(q,e,st);}
     else if(e.type==='eyes')this.eyesAI(q,e,st);
     else if(e.type==='beamer')this.beamerAI(q,e,st);
     else if(e.type==='clam')this.clamAI(q,e,st);
@@ -1930,7 +1943,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(e.type==='boss'&&e.sp>0)e.w=0; // 盾の回転攻撃中、本体は回らない
     if(e.kind==='eyes'&&e.arms.some(a=>a.alive)){e.a=0;e.w=0;} // 新ボスは砲台が残っている間だけ向きを固定（位置は物理で動く）。全部取れたら自由に回る
     // 自機に当たったらダメージ（ボスは盾にも当たり判定がある）
-    if(this.inv<=0&&this.shInv<=0&&!this.tutOn){
+    if(this.inv<=0&&this.shInv<=0&&!this.tutOn&&!(e.cool>0)){
       const p=q.p,rx=e.x-p.x,ry=e.y-p.y,lx=rx*q.nx+ry*q.ny,ly=rx*p.tx+ry*p.ty;
       const cx=clamp(lx,-8,27),cy=clamp(ly,-24,24);
       if(Math.hypot(lx-cx,ly-cy)<e.r-3){this.contactHit(q,e);return;}
@@ -2071,6 +2084,28 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     }
   }
 
+  /* --- ガラスのボス：ゆっくり迫りながら、玉の一部を膨らませて分離させ、小さい敵を作り続ける（銛が刺さって綱引き中でも続ける） --- */
+  glassBossAI(q,e,st){
+    const dx=q.p.x-e.x,dy=q.p.y-e.y;
+    e.gt=(e.gt||0)+STEP;e.sj=Math.max(0,(e.sj||0)-3*STEP);
+    let diff=Math.atan2(dy,dx)-e.a;diff=Math.atan2(Math.sin(diff),Math.cos(diff));
+    const want=clamp(diff*2.2,-1.1,1.1)*1.35*(st?0:1);
+    e.w+=(want-e.w)*Math.min(1,4*STEP);
+    const ac=60*(st?0.3:1)*STEP,aim=this.aimDir(q,e);e.vx+=aim.dx/aim.d*ac;e.vy+=aim.dy/aim.d*ac; // じわじわ迫る
+    if(e.bw>0){e.bw-=STEP;return;} // 分離のあと、少し間をあける（高いペースで繰り返す）
+    if(!(e.cg>0)){
+      if(this.es.filter(x=>x.mn).length>=GL_MAX)return; // 小さい敵が増えすぎている間は作らない
+      e.cg=0.0001;e.bA=Math.atan2(dy,dx)+rnd(-1.4,1.4);
+    }
+    e.cg+=STEP/GL_SW;
+    if(e.cg>=1){this.glassSplit(e);e.cg=0;e.bw=rnd(0.35,0.7);}
+  }
+  glassSplit(e){ // 膨らんだ部分が千切れて、小さい光の玉（＝冷めて固まる前の小さい敵）になって飛び出す
+    const a=e.bA,k=GL_KR,pt=arIn(e.x+Math.cos(a)*e.r*1.1,e.y+Math.sin(a)*e.r*1.1,k),hp=Math.max(20,Math.round((100+ENEMY_HP_SLOPE*(this.stage-1))*0.15)),cd=1.5;
+    this.es.push({type:'norm',mn:true,r:k,x:pt.x,y:pt.y,vx:e.vx*0.5+Math.cos(a)*240,vy:e.vy*0.5+Math.sin(a)*240,a:rnd(0,6.283),w:rnd(-4,4),hp,max:hp,flash:0,next:rnd(1.2,2),tele:0,dead:false,cool:cd,coolMax:cd});
+    e.vx-=Math.cos(a)*30;e.vy-=Math.sin(a)*30;e.sj=1; // 本体は少し反動で押され、玉がぷるっと揺れる
+    this.hitE.explode(10,pt.x,pt.y);sfx(520,160,0.16,0.2,'sine');
+  }
   /* --- ボスの行動：自機の方を向き、盾で守りながらゆっくり迫り、予告つきで突進 --- */
   bossAI(q,e,st){
     const dx=q.p.x-e.x,dy=q.p.y-e.y,d=Math.hypot(dx,dy)||1,armed=e.arms.some(a=>a.alive);
@@ -2626,6 +2661,22 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
     }
     if(b.emit>0){const o=b.h[0],f=0.7+0.3*Math.sin(b.t*60);g.fillStyle(col,0.35*f);g.fillCircle(o.x,o.y,13);g.fillStyle(0xffffff,0.9);g.fillCircle(o.x,o.y,4.5*f);} // 出口の光
   }
+  drawGlassCore(g,e,r){ // ガラスのボスの中心：身体の半分ほどの光の玉。グニョグニョ形を変え、分離の直前は一部が外へ膨らんで、くびれて千切れる
+    const R=r*0.5,t=e.gt||0,cg=e.cg||0,sj=e.sj||0,la=(e.bA||0)-e.a,N=28,ez=cg*cg*(3-2*cg);
+    const mk=(k,ph)=>{const pts=[];for(let i=0;i<N;i++){const a=i*Math.PI*2/N;
+      let rr=R*k*(1+0.09*Math.sin(t*3.1+a*3+ph)+0.07*Math.sin(t*5.3-a*2+ph*1.7)+0.05*Math.sin(t*8.1+a*5-ph)+sj*0.16*Math.sin(t*24+a*4));
+      if(cg>0)rr+=R*0.45*ez*Math.pow(Math.max(0,Math.cos(a-la)),3)*k;
+      pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});}return pts;};
+    g.fillStyle(0xff6a1a,0.18+0.1*(0.5+0.5*Math.sin(t*4)));g.fillCircle(0,0,R*1.5);
+    if(cg>0){ // 膨らんでいく玉：細くなるつなぎ目（くびれ）と、大きくなりながら外へ出ていく玉
+      const D=R*0.75+ez*(r*1.1-R*0.75),rd=R*(0.18+0.36*ez),bx=Math.cos(la)*D,by=Math.sin(la)*D;
+      g.lineStyle(R*0.55*(1-ez)+R*0.06,0xff7a1f,0.95);g.lineBetween(0,0,bx,by);
+      g.fillStyle(0xff7a1f,0.95);g.fillCircle(bx,by,rd*(1+0.08*Math.sin(t*16)));g.fillStyle(0xffd27a,0.95);g.fillCircle(bx,by,rd*0.5);
+    }
+    g.fillStyle(0xff7a1f,0.95);g.fillPoints(mk(1,0),true);
+    g.fillStyle(0xffa94a,0.95);g.fillPoints(mk(0.68,1.3),true);
+    g.fillStyle(0xffe6a0,0.95);g.fillPoints(mk(0.34,2.6),true);
+  }
   drawBoss(g,e,pal,q){ // ボス（本体の座標系：+xが正面）
     const r=e.r,armed=e.arms.some(a=>a.alive);
     g.fillStyle(pal.c1,1);
@@ -2636,6 +2687,7 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
     g.fillStyle(pal.c0,1);g.fillCircle(0,0,r);glassOv(g,r,pal,e.a);
     g.lineStyle(4,pal.c2,1);g.strokeCircle(0,0,r);
     g.lineStyle(2,pal.c2,0.55);g.strokeCircle(0,0,r*0.62);
+    if(e.kind==='glass'){this.drawGlassCore(g,e,r);return;}
     if(e.kind==='eyes'){ // 新ボス：正面向き（両側の目が左右に並ぶ）。盾のかわりに砲台
       g.fillStyle(armed?pal.c2:0xff3355,1);g.fillCircle(-r*0.3,0,7*BK);g.fillCircle(r*0.3,0,7*BK);
       this.drawTurrets(g,e,q);return;
@@ -2718,7 +2770,8 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
         g.lineStyle(2,0xff3355,0.35);g.lineBetween(e.x,e.y,q.p.x,q.p.y);
       }
       g.save();g.translateCanvas(e.x+(e.jx||0),e.y+(e.jy||0));g.rotateCanvas(e.a);GLASS_ROT=e.a;
-      const pal=e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm);
+      const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm);
+      if(e.mn){const k=e.r/ER;g.scaleCanvas(k,k);} // 小さい敵は、普通の敵を縮めた姿
       if(e.type==='boss')this.drawBoss(g,e,pal,q);
       else if(e.type==='clam')this.drawClam(g,e,pal);
       else if(e.type==='beamer')this.drawTurret(g,0,0,1,(e.emit>0?e.aimA:Math.atan2(q.p.y-e.y,q.p.x-e.x))-e.a,e.chg>0?1-e.chg/BM_CHG:(e.emit>0?1:0),0,1,'beamer'); // ロングビームの敵：目玉の敵と同じ姿でオレンジ
@@ -2732,6 +2785,11 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
       g.fillStyle(pal.c0,1);g.fillCircle(0,0,ER);
       g.lineStyle(3,pal.c2,1);g.strokeCircle(0,0,ER);
       g.fillStyle(pal.c2,1);g.fillCircle(ER*0.4,-7,5);g.fillCircle(ER*0.4,7,5);glassOv(g,ER,pal,e.a);
+      if(e.cool>0){ // 分離したばかり：高熱のオレンジ色に光っていて、冷めるにつれて消え、灰色のガラスに固まる
+        const c=e.cool/e.coolMax,tt=e.cool*9,pts=[];
+        for(let i=0;i<16;i++){const a=i*Math.PI*2/16,rr=(ER+9)*(1+0.1*Math.sin(tt+i*2.1)+0.06*Math.sin(tt*1.9-i*3));pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});}
+        g.fillStyle(0xff7a1f,Math.min(0.95,c*1.1));g.fillPoints(pts,true);g.fillStyle(0xffd27a,Math.min(0.9,c));g.fillCircle(0,0,ER*0.55);
+      }
       }
       g.restore();
       GLASS_ROT=0;if(e.flash>0.02){g.fillStyle(0xffffff,0.7*e.flash);g.fillCircle(e.x,e.y,(e.r||ER)+4);}
@@ -2837,7 +2895,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     this.dmgT=this.dmgT.filter(t=>{if(t.age>=1){t.destroy();return false;}return true;});
 
     this.draw(q);
-    {let hs=0,ms=0;for(const x of this.es){hs+=Math.max(0,x.hp);ms+=x.max;}ms=Math.max(ms,this.hpMax0||0);ebf.style.width=(ms?hs/ms*100:0)+'%';} // 敵が複数のときは全員の合計HP。最大値はステージ開始時の合計（倒した敵の分も含む）
+    {let hs=0,ms=0;for(const x of this.es){if(x.mn)continue;hs+=Math.max(0,x.hp);ms+=x.max;}ms=Math.max(ms,this.hpMax0||0);ebf.style.width=(ms?hs/ms*100:0)+'%';} // 敵が複数のときは全員の合計HP。最大値はステージ開始時の合計（倒した敵の分も含む）
     kn.style.transform=`translate(${knX*45}px,${knY*45}px)`;
     fb.classList.toggle('on',held());fb.classList.toggle('reel',this.reeling);
     fb.style.boxShadow=this.reeling?`0 0 ${14+30*(this.reeling?1:0)}px rgba(255,${Math.round(179-100*(this.reeling?1:0))},71,.8)`:'';
