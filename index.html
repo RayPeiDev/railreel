@@ -130,6 +130,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 .zkh em{margin-left:auto;font-style:normal;font-size:16px;color:#fff;opacity:.85}
 .zkg{display:flex;flex-wrap:wrap;gap:10px}
 .zkg .uc{animation:none!important;flex:none}
+.uc{padding-bottom:26px}.uc u{position:absolute;right:8px;bottom:6px;text-decoration:none;font:900 15px/1 Rajdhani,system-ui;color:var(--c);text-shadow:0 0 8px var(--c)} /* 取った回数（右下に×◯） */
 .uc.lk{--c:#59627a;--b1:#1a1f2e;--b2:#0e1119;--g:0px;color:#59627a}.uc.lk em{text-shadow:none}
 #setList{width:min(92%,460px);margin:28px auto 0;display:flex;flex-direction:column;gap:12px}
 .srow{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font:700 18px/1 Rajdhani,system-ui,sans-serif}
@@ -867,7 +868,7 @@ function renderCodex(){
     const n=us.filter(u=>save.upg[u.id]).length;got+=n;
     html+='<div class="zkh r'+r+'"><b>'+ZK_RK[r]+'</b><span>Rank '+ZK_RK[r]+'</span><em>'+n+' / '+us.length+'</em></div><div class="zkg">';
     for(const u of us){
-      if(save.upg[u.id])html+='<div class="uc r'+r+'"><i>'+ZK_RK[r]+'</i><em>'+ucIc(u.ic)+'</em><b>'+u.nm+'</b><span>'+u.ds+'</span></div>';
+      if(save.upg[u.id])html+='<div class="uc r'+r+'"><i>'+ZK_RK[r]+'</i><em>'+ucIc(u.ic)+'</em><b>'+u.nm+'</b><span>'+u.ds+'</span><u>×'+(+save.upg[u.id]||1)+'</u></div>';
       else html+='<div class="uc r'+r+' lk"><i>'+ZK_RK[r]+'</i><em>???</em></div>';
     }
     html+='</div>';
@@ -1632,7 +1633,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     });
   }
   applyUpg(id){
-    if(!save.upg[id]){save.upg[id]=1;persist();} // 強化図鑑：一度でも選んだ強化は解放される
+    save.upg[id]=(save.upg[id]||0)+1;persist(); // 強化図鑑：一度でも選んだ強化は解放される。値は取った回数（以前のセーブの1は1回として続きから数える）
     if(id==='hf')this.php=this.maxhp;
     else if(id[0]==='h')this.php=Math.min(this.maxhp,this.php+(id==='h2'?2:1));
     else if(id[0]==='m'){const n=id==='m3'?3:id==='m2'?2:1;this.maxhp+=n;this.php+=n;}
