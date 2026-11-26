@@ -104,6 +104,19 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 #setTop{display:flex;align-items:center;gap:16px;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0}
 #setTop .pill{margin:0;padding:10px 22px;font-size:15px}
 #setT{font:900 24px/1 Rajdhani,system-ui,sans-serif;letter-spacing:2px}
+#zkBtn{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);margin:0;padding:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.09);cursor:pointer}#zkBtn:active{transform:translateX(-50%) scale(.93)}#zkBtn svg{width:32px;height:32px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#zk{position:fixed;inset:0;display:none;flex-direction:column;z-index:25;color:#fff;font-family:Rajdhani,system-ui,sans-serif;background:radial-gradient(ellipse at 50% 38%,#1c2750 0%,#0b1020 55%,#070a12 100%)}
+#zkTop{display:flex;align-items:center;gap:16px;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0}
+#zkTop .pill{margin:0;padding:10px 22px;font-size:15px}
+#zkT{font:900 24px/1 Rajdhani,system-ui,sans-serif;letter-spacing:2px}
+#zkCnt{margin-left:auto;font:800 20px/1 Rajdhani,system-ui,sans-serif}
+#zkList{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.zkh{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;color:var(--c);font:900 20px/1 Rajdhani,system-ui,sans-serif;letter-spacing:1px}
+.zkh b{font-size:30px;font-style:italic;text-shadow:0 0 12px var(--c)}
+.zkh em{margin-left:auto;font-style:normal;font-size:16px;color:#fff;opacity:.85}
+.zkg{display:flex;flex-wrap:wrap;gap:10px}
+.zkg .uc{animation:none!important;flex:none}
+.uc.lk{--c:#59627a;--b1:#1a1f2e;--b2:#0e1119;--g:0px;color:#59627a}.uc.lk em{text-shadow:none}
 #setList{width:min(92%,460px);margin:28px auto 0;display:flex;flex-direction:column;gap:12px}
 .srow{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font:700 18px/1 Rajdhani,system-ui,sans-serif}
 .sw{position:relative;flex:none;width:64px;height:36px;padding:0;border-radius:999px;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);cursor:pointer;transition:background .2s,border-color .2s}
@@ -135,6 +148,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
   <div id="ovc"><div id="ovNew">NEW RECORD!</div><b id="ovb"></b><span id="ovs"></span><div id="tap">Tap to retry</div><button id="homeBtn" class="pill" type="button">Home</button></div><div id="ovCoin" class="coinBox"><i class="cn"></i><span id="ovCoinN">0</span></div><div id="ovGain"></div></div>
 <div id="set"><div id="setTop"><button id="setBack" class="pill" type="button">Back</button><div id="setT">Settings</div></div><div id="setList"><div class="srow"><span>Sound FX</span><button id="sfxSw" class="sw" type="button" role="switch" aria-checked="true" aria-label="Sound FX"><i></i></button></div><div class="srow"><span>How to play</span><button id="tutRe" class="pill" type="button">Watch again</button></div></div></div>
 <div id="shop"><div id="shopTop"><button id="shopBack" class="pill" type="button">Back</button><div class="coinBox"><i class="cn"></i><span id="shopCoin">0</span></div></div><div id="shopRow"></div></div>
+<div id="zk"><div id="zkTop"><button id="zkBack" class="pill" type="button">Back</button><div id="zkT">Upgrade Codex</div><div id="zkCnt"></div></div><div id="zkList"></div></div>
 <div id="upg"><div id="upgT"></div><div id="upgHp"></div><div id="upgRow"></div><button id="upgRr" type="button"></button></div>
 <div id="pick" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.88);flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font:16px Rajdhani,system-ui,sans-serif"></div>
 <div id="home">
@@ -145,6 +159,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
     <div class="mb sd"><button id="setBtn" type="button" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.6"/><path d="M12 2.6v2.8M12 18.6v2.8M2.6 12h2.8M18.6 12h2.8M5.4 5.4l2 2M16.6 16.6l2 2M18.6 5.4l-2 2M7.4 16.6l-2 2"/></svg></button>Settings</div>
   </div>
   <div id="coinHome" class="coinBox"><i class="cn"></i><span id="homeCoin">0</span></div>
+  <button id="zkBtn" type="button" aria-label="Upgrade Codex"><svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg></button>
   <div id="toast"></div>
 </div>
 <div id="tut"></div><div id="tutc"></div>
@@ -155,7 +170,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 /* ===== レール（毎回ランダム：正方形・円・正三角形・直線） ===== */
-const HS=346,R=26,WALL=HS-7; // （一辺のレール直線部分＝2×(HS−R)＝640。壁の内側の面積＝(2×(HS−7))²≒46万で、円・三角・直線もこの面積にそろえる） 正方形：レール中心線の半分の幅／角の丸め／壁＝レールの内側の線
+const HS=346,R=26,RW=14,WALL=HS-RW,BS=2; // （一辺のレール直線部分＝2×(HS−R)＝640。壁の内側の面積＝(2×(HS−7))²≒46万で、円・三角・直線もこの面積にそろえる） 正方形：レール中心線の半分の幅／角の丸め／壁＝レールの内側の線
 let segs=[],L=0,RAIL={open:false,s0:0,name:'square'},AR={pl:[],circ:false,wr:0,sx:0,sy:0};
 // 正n角形のレール（aは中心線の内接円の半径、角はRで丸める）。底の辺から始めて、画面上で左回り
 function mkPoly(n,a){
@@ -238,7 +253,7 @@ function setShape(name,W,H){
   }else if(name==='line'){ // 固定サイズ（横長）のステージの下辺に直線を引く。敵は直線の上の長方形の中
     const z0=Math.min(LINE_ZOOM_RATE*H,W/LINE_VIEW_W),hwS=LINE_FIXED?438:clamp(W/(2*z0),300,700),ah=LINE_FIXED?525:clamp(H/z0*0.62,440,780),YR=240,hw=hwS-(LINE_FIXED?8:16); // レールの両端と壁の間の余白は8。ステージは固定：幅876×高さ525の横長（縦:横＝3:5、面積≒46万で、四角・円・三角と同じ。画面の大きさに関係なく同じ。ズームとカメラはlineViewで決める）
     segs=[{t:0,x:-hw,y:YR,dx:1,dy:0,len:2*hw}];RAIL.open=true;
-    const wb=YR-7,wt=wb-ah;
+    const wb=YR-RW,wt=wb-ah;
     AR.pl=[{nx:0,ny:1,d:wb},{nx:0,ny:-1,d:-wt},{nx:1,ny:0,d:hwS},{nx:-1,ny:0,d:hwS}];
     AR.rect={x0:-hwS,y0:wt,x1:hwS,y1:wb};AR.sy=(wt+wb)/2;AR.camY=lineView(W,H,AR.rect).cy; // カメラのy（毎フレームlineViewで更新）
   }else{
@@ -247,19 +262,19 @@ function setShape(name,W,H){
   }
   L=segs.reduce((a,q)=>a+q.len,0);
   RAIL.s0=name==='circle'?0:name==='line'?L/2:segs[0].len/2;
-  if(!RAIL.open){AR.wallPts=[];for(let q=0;q<L;q+=3){const p=at(q);AR.wallPts.push({x:p.x+p.ty*7,y:p.y-p.tx*7});}}
+  if(!RAIL.open){AR.wallPts=[];for(let q=0;q<L;q+=3){const p=at(q);AR.wallPts.push({x:p.x+p.ty*RW,y:p.y-p.tx*RW});}}
 }
 // 自機の姿勢：p=レール上の位置、phi=機械の向き、pv=銛の支点、psi=銛の向き（(tx,ty)＝狙う点）
 function pose(s,rc,tx,ty){
   const p=at(s),nx=p.ty,ny=-p.tx;
-  const pvx=p.x+nx*(14-rc),pvy=p.y+ny*(14-rc);
+  const pvx=p.x+nx*(14-rc)*BS,pvy=p.y+ny*(14-rc)*BS;
   return{p,nx,ny,phi:Math.atan2(ny,nx),pvx,pvy,psi:Math.atan2(ty-pvy,tx-pvx)};
 }
 
 /* ===== 調整用の定数 ===== */
 const ER=32,EI=ER*ER*2; // 敵の半径／EI＝敵の回転しにくさ
 const LMIN=12; // 刺さった銛が縮められる最短の長さ（敵を引き寄せる時、銛が伸縮して敵が自機まで届く）
-const LEN=72,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
+const LEN=94,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
 const TURN_K=36; // 切り返し時の速度の追従の速さ（通常は14。大きいほど素早く反転する）
 const SPEED=330;          // 自機のレール上の速さ
 const RMAX=1000,NSEG=24;   // ロープの最大長・分割数
@@ -379,7 +394,7 @@ function glassOv(g,r,pal,ra,al){al=al===undefined?1:al;
 }
 const FW_PAL=[[0xff4d6d,0xffd166],[0x4cc9f0,0xf1faee],[0xffb703,0xff5d8f],[0x80ed99,0xffe66d],[0xc77dff,0x72efdd],[0xff9e00,0xffffff]]; // 花火の色の組み合わせ（外側の輪／内側の輪）
 const FW_G=60; // 花火の星が垂れ落ちる強さ（画面の下向き、px/秒²）
-const TUR_R=6,TUR_SPD=5; // トゲ砲台：自分の位置の区画から左右にTUR_R区画ずつ／せり出し・沈みの速さ(1秒あたりの割合。5＝約0.2秒)
+const TUR_R=13,TUR_SPD=5; // トゲ砲台：自分の位置の区画から左右にTUR_R区画ずつ／せり出し・沈みの速さ(1秒あたりの割合。5＝約0.2秒)
 const SPK_DMG=p=>5*p,SPK_PMAX=64,spkLv=p=>1+Math.log2(Math.max(1,p)); // トゲの追加ダメージ＝5×強さ（比例）／強さは色ごとに2倍（灰1・水色2・赤4・紫8・金16、合成でピンク32・白64）／spkLv＝見た目・火花・吹き飛びに使う段階（強さの2を底とする対数。灰1〜金5、ピンク6、白7）
 const SPK_COL=[0xe3eaf6,0x3cc8ff,0xff3b4a,0xc35cff,0xffd24a,0xff6e8c,0xffffff]; // 強さ1〜7の色（灰→水色→赤→紫→金→ピンク→白）。1〜5は強化カードのランク色(C〜SS)と同じ。6・7は合成でのみ到達
 function spkCol(p){const f=Math.max(0,Math.min(SPK_COL.length-1,spkLv(p)-1)),i=Math.floor(f),k=f-i,a=SPK_COL[i],b=SPK_COL[Math.min(SPK_COL.length-1,i+1)];const m=sh=>Math.round(((a>>sh)&255)*(1-k)+((b>>sh)&255)*k);return(m(16)<<16)|(m(8)<<8)|m(0);}
@@ -449,7 +464,7 @@ upgRr.addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&sc.
 const PSH_R=38,PSH_W=2.2,PSH_DMG=60,PSH_KB=1200,PSH_MAX=12; // 自機のシールド：多角形の大きさ(px)／回る速さ(rad/秒)／敵に与えるダメージ／敵を吹き飛ばす速さ／最大枚数
 const DEATH_WAIT=1.0; // やられた時：ゲームオーバー画面を出すまで、倒された瞬間の画面を見せる時間(秒)
 const TAN_M=60,TAN_V=200,TAN_A=900; // 敵が自機のレールの接線に近づきすぎた時の押し戻し：近すぎる距離(px。敵の半径に足す)／これ未満の速さの時だけ働く(px/秒)／押し戻す強さ(px/秒²)
-const LIFT_WALL=7,LIFT_BAND=55,LIFT_UP=90,LIFT_S0=0.3,LIFT_S1=0.7,LIFT_LY0=150,LIFT_LY1=300; // 引いている敵が辺に沿って横から自機に当たるのを避ける補助：壁のレールからの距離(px)／辺からこの幅の中だけ働く(px)／引く先を辺から離す最大の距離(px)／引く向きが「辺に沿う」(S0以下で全力)〜「正面から」(S1以上で無効)の境目(0〜1)／自機からの横の距離(px)：LY0以内で全力〜LY1で無効
+const LIFT_WALL=RW,LIFT_BAND=55,LIFT_UP=90,LIFT_S0=0.3,LIFT_S1=0.7,LIFT_LY0=150,LIFT_LY1=300; // 引いている敵が辺に沿って横から自機に当たるのを避ける補助：壁のレールからの距離(px)／辺からこの幅の中だけ働く(px)／引く先を辺から離す最大の距離(px)／引く向きが「辺に沿う」(S0以下で全力)〜「正面から」(S1以上で無効)の境目(0〜1)／自機からの横の距離(px)：LY0以内で全力〜LY1で無効
 const MAXHP=5;            // 自機のHP
 
 /* ===== 音（簡易） ===== */
@@ -597,7 +612,7 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0;if(e.key===' ')kfire=false;});
 // iPhoneの長押し拡大鏡・選択・メニューを抑止
-const stop=e=>{if(e.target.closest&&e.target.closest('#shopRow'))return;e.preventDefault();}; // ショップの横スクロールだけは許可
+const stop=e=>{if(e.target.closest&&e.target.closest('#shopRow,#zkList'))return;e.preventDefault();}; // ショップの横スクロールと、図鑑の縦スクロールだけは許可
 ['touchstart','touchmove','contextmenu','selectstart','gesturestart','dragstart'].forEach(t=>document.addEventListener(t,stop,{passive:false}));
 function inputX(){
   const v=stickId!==null?sx:((keys.arrowright||keys.d)?1:0)-((keys.arrowleft||keys.a)?1:0);
@@ -611,8 +626,8 @@ overEl.addEventListener('pointerup',e=>{ // ホーム画面へボタン以外は
 });
 
 /* ===== セーブ（コイン・買った砲台・装備中） ===== */
-const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0,maxDmg:0,sfx:true,tut:0}; // tut＝チュートリアルを終えたら1
-try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(d.owned)Object.assign(save.owned,d.owned);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
+const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0,maxDmg:0,sfx:true,tut:0,upg:{}}; // tut＝チュートリアルを終えたら1
+try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(d.owned)Object.assign(save.owned,d.owned);if(d.upg&&typeof d.upg==='object')Object.assign(save.upg,d.upg);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
 const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}};
 // 貰えるコイン＝到達したウェーブだけで決まる（倒した数は関係ない）。1ウェーブ10枚、5ウェーブごと（ボス）に+40枚
 let lastGain=0; // 直近のリザルトで貰ったコイン
@@ -623,11 +638,50 @@ function updCoin(){document.getElementById('homeCoin').textContent=save.coins;do
 
 /* ===== ホーム／リザルト画面 ===== */
 const homeEl=document.getElementById('home'),toastEl=document.getElementById('toast'),tutEl=document.getElementById('tut'),tutCEl=document.getElementById('tutc');
+/* ===== 全体のプレイ統計（Firebase Realtime Database）：累計プレイ回数と、累計プレイ時間（一人ずつの秒数を足す＝同時に2人なら2倍）。FB_DB_URLが未設定／テストモード／通信できない時は、何もせず静かに諦める。プレイ画面にいる間は接続したままにして、ホームに戻る／タブを裏に回すと切る ===== */
+const FB_DB_URL='https://railreel-default-rtdb.asia-southeast1.firebasedatabase.app'; // ←Realtime DatabaseのURLに書き換える（このままだと完全に無効）
+const ST={D:null,db:null,bad:0,sec:0,plays:0,busy:false,up:false,conn:false,linking:false,retry:0};
+const stOn=()=>!TEST_MODE&&ST.bad<3&&FB_DB_URL.indexOf('YOUR-PROJECT')<0;
+function statPlay(){if(stOn())ST.plays++;}
+async function stLink(want){ // 接続を、プレイ画面にいる間だけ保つ（初回だけSDKを読み込む。読めなければ30秒あけて再挑戦）
+  if(ST.linking||Date.now()<ST.retry)return;
+  ST.linking=true;
+  try{
+    if(want&&!ST.db){
+      const [A,D]=await Promise.all([import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),import('https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js')]);
+      ST.D=D;ST.db=D.getDatabase(A.initializeApp({databaseURL:FB_DB_URL}));
+      D.onValue(D.ref(ST.db,'.info/connected'),sn=>{ST.conn=sn.val()===true;});
+    }
+    if(ST.db){if(want)ST.D.goOnline(ST.db);else ST.D.goOffline(ST.db);ST.up=want;}
+  }catch(e){ST.retry=Date.now()+30000;}
+  ST.linking=false;
+}
+async function stSend(){
+  if(ST.busy||!ST.up||!ST.conn||(!ST.sec&&!ST.plays))return; // 接続できていない時は送らない（たまった分は次の機会に）
+  ST.busy=true;
+  const sec=Math.min(ST.sec,60),plays=Math.min(ST.plays,20);ST.sec=0;ST.plays=0; // 送れなかった分は捨てる（なくてもいい機能）
+  try{
+    const D=ST.D,w=[];
+    if(sec)w.push(D.set(D.ref(ST.db,'stats/totalSeconds'),D.increment(sec)));
+    if(plays)w.push(D.set(D.ref(ST.db,'stats/totalPlays'),D.increment(plays)));
+    await Promise.race([Promise.all(w),new Promise((_,j)=>setTimeout(j,8000))]);
+    ST.bad=0;
+  }catch(e){ST.bad++;}
+  ST.busy=false;
+}
+setInterval(()=>{ // 1秒ごと：プレイ中（結果画面・ホーム・裏タブは除く）なら1秒足す。30秒たまるか、プレイが止まったら送る。接続は、プレイ画面にいる間だけ保つ
+  if(!stOn())return;
+  const play=screen==='play'&&!document.hidden;
+  const live=play&&overEl.style.display!=='flex';
+  if(live)ST.sec++;
+  if(ST.sec>=30||(!live&&(ST.sec||ST.plays)))stSend();
+  if(play!==ST.up&&!ST.busy)stLink(play); // 送信が終わってから切る
+},1000);
 let tutLast='',demoDone=false; // demoDone＝見本（チュートリアルを自動で通して見せる）を見せ終えた（ページを開いている間）
 let screen='home',ovAt=0;
 function setScreen(s){screen=s;document.body.classList.toggle('play',s==='play');homeEl.style.display=s==='home'?'flex':'none';}
 setScreen('home');
-if(!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL))setScreen('play'); // 初めての人は、ホームを飛ばしてチュートリアルから始まる
+if(!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL)){statPlay();setScreen('play');} // 初めての人は、ホームを飛ばしてチュートリアルから始まる
 function toast(t){toastEl.textContent=t;toastEl.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>toastEl.classList.remove('on'),1400);}
 /* --- テスト用：STAGE1で出す敵の選択画面（プレイ／リトライの後に出る。ユーザーには見せない） --- */
 const pickEl=document.getElementById('pick');
@@ -653,7 +707,7 @@ function openPick(){overEl.style.display='none';if(!TEST_MODE){testPick='default
 const skipBtn=document.getElementById('skip');
 skipBtn.addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];if(sc&&sc.skipStage)sc.skipStage();});
 document.getElementById('tutSkip').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&(sc.tutOn||sc.free))sc.tutSkip();}); // 左上のSkip：チュートリアル全体を飛ばす（見本の最中でも実践の途中でも）。タップで音声も起動するので、イベントは止めない
-function runGame(){const sc=game.scene.scenes[0];fireQ=false;kfire=false;setScreen('play');if(sc)sc.scene.restart();}
+function runGame(){const sc=game.scene.scenes[0];fireQ=false;kfire=false;statPlay();setScreen('play');if(sc)sc.scene.restart();}
 function startGame(){openPick();}
 function goHome(){overEl.style.display='none';setScreen('home');}
 document.getElementById('playBtn').addEventListener('pointerup',startGame);
@@ -672,7 +726,7 @@ const TURRETS=[
   {id:'std',name:'Standard Harpoon',desc:'The basic turret. Stab and pull.',price:0,icon:IC.std},
   {id:'bomb',name:'Bomb',desc:'Explodes when it sticks, dealing fixed damage.',price:100,icon:IC.bomb},
   {id:'laser',name:'Laser',desc:'Fires like a laser and hits instantly. The enemy is blasted away in the direction it was hit.',price:200,icon:IC.laser},
-  {id:'spike',name:'Spike Turret',desc:'Like the standard harpoon, plus gray spikes grow on the 6 wall segments to your left and right. They follow you as you move and stack with wall spikes.',price:300,icon:IC.spike},
+  {id:'spike',name:'Spike Turret',desc:'Like the standard harpoon, plus gray spikes grow on the 13 wall segments to your left and right. They follow you as you move and stack with wall spikes.',price:300,icon:IC.spike},
   {id:'scatter',name:'Scatter Shot',desc:'Fires 3 harpoons: the center one plus two angled slightly left and right. Only one sticks (center first, then whichever side lands first) and the rest retract instantly.',price:400,icon:IC.scatter},
   {id:'firework',name:'Fireworks',desc:'While stuck, sparks run along the rope like a fuse. When they reach the enemy, a fixed-power firework goes off and deals damage (no knockback).',price:500,icon:IC.firework},
   {soon:true}
@@ -683,18 +737,44 @@ const TURRETS=[
 const SHIP_SKIN={
   std:{wh:0xb9c4e4,ax:0x4a5a85,bd:0xe9edf8,ol:0x26304d,ba:0x4a5a85},
   bomb:{wh:0x6b738f,ax:0x2b3048,bd:0x3a4060,ol:0x161a2b,ba:0x2a2f45,
-    bodyDeco(g,rc,ma){ // 本体の左右に、ミニ爆弾（黒い丸＋オレンジの縁＋小さな導火線）。中央は銃身が重なるので避ける
-      for(const y of [-12.5,12.5]){
-        const x=14-rc;
-        g.fillStyle(0x0e1019,ma);g.fillCircle(x,y,5);
-        g.lineStyle(1.6,0xffb347,ma);g.strokeCircle(x,y,5);
-        g.fillStyle(0x7a84a6,ma);g.fillCircle(x-1.6,y-1.6,1.1);
-        g.lineStyle(1.4,0xcfa15a,ma);g.lineBetween(x+4,y,x+7,y);
-        g.fillStyle(0xffd27a,ma);g.fillCircle(x+7.4,y,1.3);
-      }
-    },
     barDeco(g,ma){ // 銃身にオレンジの帯
       g.fillStyle(0xffb347,ma);g.fillRect(9,-6,3,12);
+    }},
+  spike:{wh:0x9aa1b4,ax:0x4d5363,bd:0x8b91a0,ol:0x2c303c,ba:0x4a5a85,
+    bodyDeco(g,rc,ma){ // 車輪の外側に灰色のトゲを三本ずつ（本体からはトゲを生やさない）
+      const sp=(x1,y1,x2,y2,x3,y3,c)=>{g.fillStyle(c,ma);g.fillTriangle(x1,y1,x2,y2,x3,y3);g.lineStyle(1,0x2c303c,ma);g.strokeTriangle(x1,y1,x2,y2,x3,y3);};
+      for(const d of[-1,1])for(const x of[-6,0,6])sp(x-2,d*24,x+2,d*24,x,d*32,0x9aa1b4);
+    },
+    barDeco(g,ma){ // 銃身に細い灰色の輪を二本
+      g.fillStyle(0xc5cad6,ma);g.fillRect(8,-6,2,12);g.fillRect(12,-6,2,12);
+    }},
+  firework:{wh:0x6b3a30,ax:0x2e1612,bd:0xc8412f,ol:0x5a1a12,ba:0x2a2f45,
+    bodyDeco(g,rc,ma){ // 本体に金の帯を二本（本体と一緒に反動で動く）
+      g.fillStyle(0xffd27a,ma);g.fillRect(10.5-rc,-14,1.6,28);g.fillRect(18-rc,-14,1.6,28);
+    },
+    barDeco(g,ma){ // 銃身の先に金の縁、後ろに導火線と火花
+      g.fillStyle(0xffd27a,ma);g.fillRect(15,-6,3,12);
+      g.lineStyle(1,0xffe6a8,ma);g.beginPath();g.moveTo(-10,0);
+      for(const [x,y] of[[-12,-1.8],[-14,0],[-16,1.8],[-18,0],[-21,0]])g.lineTo(x,y);
+      g.strokePath();
+      g.fillStyle(0xffb347,ma);g.fillCircle(-21,0,2);g.fillStyle(0xffffff,ma);g.fillCircle(-21,0,0.9);
+    }},
+  laser:{wh:0xb9c4e4,ax:0x66e0ff,bd:0xf4f7fc,ol:0x26304d,ba:0x4a5a85,
+    bodyDeco(g,rc,ma){ // 本体の側面に、銃身と平行な青い線を二本（本体と一緒に反動で動く）
+      g.fillStyle(0x66e0ff,ma);g.fillRect(6-rc,-10.6,18,1.4);g.fillRect(6-rc,9.2,18,1.4);
+    },
+    barDeco(g,ma){ // 銃身に青い帯
+      g.fillStyle(0x66e0ff,ma);g.fillRect(9,-6,3,12);
+    }},
+  scatter:{wh:0xb9c4e4,ax:0x4a5a85,bd:0xe9edf8,ol:0x26304d,ba:0x4a5a85, // 初期の砲台とほぼ同じ見た目
+    barBody(g,ma){ // 銃身そのものを三叉にする：後ろ半分(x=-10〜4)は本来の太さ(12)、そこから中央＋左右の3本に分かれる。左右の砲身は、左右の銛の実際の発射線（発射位置＝銃身の縁(±SC_OFF/BS)、向き＝±SC_SPREAD）の上（銃身の座標はBS倍なので発射位置は÷BS）
+      g.fillRoundedRect(-10,-6,14,12,{tl:4,tr:0,bl:4,br:0}); // 後ろ半分：本来の太さ
+      g.fillRoundedRect(3,-2.8,15,5.6,{tl:0,tr:2,bl:0,br:2}); // 中央の砲身（真正面の銛）
+      const c=Math.cos(SC_SPREAD),sn=Math.sin(SC_SPREAD),o=SC_OFF/BS,hw=2.8,t1=16.5; // hw＝各砲身の太さの半分／t1＝先端
+      for(const sg of[-1,1]){
+        const P=(t,w)=>({x:t*c-w*sn,y:sg*(o+t*sn+w*c)}); // 発射位置から向きに沿ってt、横にw
+        g.fillPoints([P(t1,hw),P(t1,-hw),P(0,-hw),{x:-1,y:sg*6},P(2,hw)],true); // 根元は後ろ半分の中に埋め、外側の縁は面取りでつなぐ
+      }
     }}
 };
 function renderShop(){
@@ -726,6 +806,25 @@ document.getElementById('tutRe').addEventListener('pointerup',e=>{save.tut=0;dem
 document.getElementById('setBtn').addEventListener('pointerup',()=>{updSet();setEl.style.display='flex';});
 document.getElementById('setBack').addEventListener('pointerup',()=>{setEl.style.display='none';});
 sfxSw.addEventListener('pointerup',()=>{save.sfx=!save.sfx;persist();updSet();if(save.sfx){unlock();sfx(900,1500,0.1,0.3,'triangle');}else if(AC&&AC.state==='running')AC.suspend();}); // オフにしたら音声機能も止めて、他の再生を邪魔しない // 効果音のオン／オフ（オンにした時だけ確認音）
+/* ===== 強化図鑑：ホーム画面の下のボタンから開く。選んだことのある強化は明るいカード、まだのものは「???」のカード。ランク別（C→SS） ===== */
+const ZK_RK=['C','B','A','S','SS'];
+const zkEl=document.getElementById('zk'),zkList=document.getElementById('zkList'),zkCnt=document.getElementById('zkCnt');
+function renderCodex(){
+  let got=0,html='';
+  for(let r=0;r<ZK_RK.length;r++){
+    const us=UPG.filter(u=>u.rk===r);if(!us.length)continue;
+    const n=us.filter(u=>save.upg[u.id]).length;got+=n;
+    html+='<div class="zkh r'+r+'"><b>'+ZK_RK[r]+'</b><span>Rank '+ZK_RK[r]+'</span><em>'+n+' / '+us.length+'</em></div><div class="zkg">';
+    for(const u of us){
+      if(save.upg[u.id])html+='<div class="uc r'+r+'"><i>'+ZK_RK[r]+'</i><em>'+ucIc(u.ic)+'</em><b>'+u.nm+'</b><span>'+u.ds+'</span></div>';
+      else html+='<div class="uc r'+r+' lk"><i>'+ZK_RK[r]+'</i><em>???</em></div>';
+    }
+    html+='</div>';
+  }
+  zkList.innerHTML=html;zkCnt.textContent=got+' / '+UPG.length;
+}
+document.getElementById('zkBtn').addEventListener('pointerup',()=>{renderCodex();zkEl.style.display='flex';zkList.scrollTop=0;});
+document.getElementById('zkBack').addEventListener('pointerup',()=>{zkEl.style.display='none';});
 document.getElementById('homeBtn').addEventListener('pointerup',()=>{if(performance.now()-ovAt>500)dismissOver(goHome);});
 
 // リザルト背景：倒した敵が降り積もる（ボスは盾つき）
@@ -948,7 +1047,7 @@ class Main extends Phaser.Scene{
     this.tutOn=!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL); // チュートリアル中（初めて・テストの敵指定なし）
     setShape(this.tutOn?'line':shapeFor(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1),this.scale.width,this.scale.height);
     this.s=RAIL.s0;this.vel=0;this.acc=0;this.freeze=0;this.punch=0;this.ts=1;this.slowT=0;this.slowLen=0;this.slowCD=0;this.recoil=0;this.cool=0;this.hcool=0;
-    this.h=null;this.ex=[];this.rope=null;this.ropeLen=0;this.holdT=0;this.reeling=false;this.taut=false;this.lbl='';
+    this.h=null;this.ex=[];this.ld=[0,0,0];this.rope=null;this.ropeLen=0;this.holdT=0;this.reeling=false;this.taut=false;this.lbl='';
     this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.stage=this.tutOn?0:/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1;this.kills=0;this.runMax=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
     this.es=[];(this.dmgT||[]).forEach(t=>t.destroy());this.dmgT=[];this.combo=0;this.comboT=0;this.wallF=0;this.imps=[];this.shards=[];this.fwk=[];this.fwf=[];this.chunks=[];this.resT=0;this.msgT=0;this.yankC=0;
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
@@ -1084,7 +1183,7 @@ class Main extends Phaser.Scene{
       st=dmgStyle(v);col=hex(st.col);stk=hex(st.stk);
       sz=Math.round(DMG_SZ_MIN+(DMG_SZ_TOP-DMG_SZ_MIN)*Math.pow(Math.min(1,v/DMG_SZ_MAX),0.5)); // 大きいダメージほど大きく（上限あり）。序盤から大きくなりやすい曲線
     }
-    const t=this.add.text(x+rnd(-12,12),y+rnd(-12,12),String(n),{fontFamily:'Bungee,Impact,\"Arial Black\",system-ui,sans-serif',fontStyle:'italic',fontSize:sz+'px',color:col,stroke:stk,strokeThickness:Math.round(sz*0.26)}).setOrigin(0.5).setDepth(4).setResolution(2);
+    const t=this.add.text(x+rnd(-12,12),y+rnd(-12,12),String(n),{fontFamily:'Bungee,Impact,\"Arial Black\",system-ui,sans-serif',fontStyle:'italic',fontSize:sz+'px',color:col,stroke:stk,strokeThickness:Math.round(sz*0.26),padding:{left:Math.ceil(sz*0.2+(st.shine?20:10)),right:Math.ceil(sz*0.2+(st.shine?20:10))}}).setOrigin(0.5).setDepth(4).setResolution(2); // 左右に余白：斜体の文字は右端が文字枠の外へはみ出して途切れるので、広げる（左右同じ幅なので位置はずれない）。光る影の分も含む
     if(st.shine)t.setShadow(0,0,'#ffffff',20,true,true); // 白・虹は強く輝く
     else if(st.tier===4)t.setShadow(0,0,'#a64dff',10,true,true); // 黒は紫の光で浮かせる
     else t.setShadow(0,3,'#000000',5,true,true);
@@ -1110,24 +1209,24 @@ class Main extends Phaser.Scene{
     if(this.stg)this.stg.destroy();
     const st=this.stg=this.add.graphics().setDepth(0);
     st.fillStyle(0x5a78c8,0.16);
-    if(RAIL.open){const r=AR.rect;st.fillRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0+7);st.lineStyle(2,0x7896ff,0.2);st.strokeRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0);}
+    if(RAIL.open){const r=AR.rect;st.fillRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0+RW);st.lineStyle(2,0x7896ff,0.2);st.strokeRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0);}
     else{const fp=[];for(let q=0;q<L;q+=3){const p=at(q);fp.push({x:p.x,y:p.y});}st.fillPoints(fp,true);}
     st.lineStyle(1.2,0x7896ff,0.08);
     for(let i=-1100;i<=1100;i+=100){st.lineBetween(i,-1100,i,1100);st.lineBetween(-1100,i,1100,i);}
-    st.lineStyle(5,0x2a2438,1);
-    for(let s=0;s<L;s+=18){const p=at(s),nx=p.ty,ny=-p.tx;st.lineBetween(p.x-nx*13,p.y-ny*13,p.x+nx*13,p.y+ny*13);}
-    st.lineStyle(3.5,0x8fa3d6,1);
-    for(const off of[-7,7]){
+    st.lineStyle(10,0x2a2438,1);
+    for(let s=0;s<L;s+=36){const p=at(s),nx=p.ty,ny=-p.tx;st.lineBetween(p.x-nx*26,p.y-ny*26,p.x+nx*26,p.y+ny*26);}
+    st.lineStyle(7,0x8fa3d6,1);
+    for(const off of[-RW,RW]){
       st.beginPath();
       for(let s=0;s<=L+(RAIL.open?3:0);s+=3){const p=at(s),x=p.x+p.ty*off,y=p.y-p.tx*off;s?st.lineTo(x,y):st.moveTo(x,y);}
       if(!RAIL.open)st.closePath();st.strokePath();
     }
-    if(RAIL.open){const a0=at(0),a1=at(L);st.lineStyle(6,0x8fa3d6,1);st.lineBetween(a0.x,a0.y-12,a0.x,a0.y+12);st.lineBetween(a1.x,a1.y-12,a1.x,a1.y+12);} // 直線の両端の止め
-    if(AR.circ){for(let k=0;k<4;k++){const a=k*Math.PI/2,x=Math.cos(a)*(AR.rc+24),y=Math.sin(a)*(AR.rc+24);st.fillStyle(0xffb347,0.22);st.fillCircle(x,y,12);st.fillStyle(0xffb347,1);st.fillCircle(x,y,6);}} // 円は回っているのが分からないので、外側の四方に目印の点
+    if(RAIL.open){const a0=at(0),a1=at(L);st.lineStyle(12,0x8fa3d6,1);st.lineBetween(a0.x,a0.y-24,a0.x,a0.y+24);st.lineBetween(a1.x,a1.y-24,a1.x,a1.y+24);} // 直線の両端の止め
+    if(AR.circ){for(let k=0;k<4;k++){const a=k*Math.PI/2,x=Math.cos(a)*(AR.rc+40),y=Math.sin(a)*(AR.rc+40);st.fillStyle(0xffb347,0.22);st.fillCircle(x,y,12);st.fillStyle(0xffb347,1);st.fillCircle(x,y,6);}} // 円は回っているのが分からないので、外側の四方に目印の点
   }
   changeShape(name){ // ステージ5つごとにレールの形を変える：自機は新しいレールの定位置へ、銛はしまう
     setShape(name,this.scale.width,this.scale.height);
-    this.s=RAIL.s0;this.vel=0;this.h=null;this.ex=[];this.rope=null;this.ropeLen=0;this.reeling=false;this.taut=false;this.jerkT=0;this.snapT=0;this.pieces=[];this.bul=[];
+    this.s=RAIL.s0;this.vel=0;this.h=null;this.ex=[];this.ld=[0,0,0];this.rope=null;this.ropeLen=0;this.reeling=false;this.taut=false;this.jerkT=0;this.snapT=0;this.pieces=[];this.bul=[];
     this.drawStatic();this.wp=wallPath();this.ensureCells();this.buildSpk();
   }
   spawn(){
@@ -1214,7 +1313,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   /* --- 狙い（敵の動きを少し先読み） --- */
   aim(){
     const e=this.e;if(!e)return{x:0,y:0};
-    const p=at(this.s),pvx=p.x+p.ty*14,pvy=p.y-p.tx*14;
+    const p=at(this.s),pvx=p.x+p.ty*14*BS,pvy=p.y-p.tx*14*BS;
     let tx=e.x,ty=e.y;
     if(e.type==='boss'&&!(e.sp===1||e.sp===2)){ // 盾が残っている間は、盾（近い方）を狙う（盾の回転攻撃中は本体）
       let best=1e9;
@@ -1233,7 +1332,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   fire(){
     const q=this.gp(),ux=Math.cos(q.psi),uy=Math.sin(q.psi);
     const b={x:q.pvx,y:q.pvy,px:q.pvx,py:q.pvy};
-    this.h={b,ux,uy,st:'fly',trail:[],offT:null,rel:0,tg:null,arm:-1,sl:LEN,sdir:0};
+    this.h={b,ux,uy,st:'fly',trail:[],offT:null,rel:0,tg:null,arm:-1,sl:LEN,sdir:0,slot:0};this.ld=[null,null,null]; // slot＝この銛の砲身（-1左・0真ん中・1右）。ld＝砲身ごとの装填状態
     this.ropeLen=8;this.ropeMax=RMAX;this.pressFired=true;
     this.rope=[];
     for(let i=0;i<NSEG;i++){
@@ -1248,7 +1347,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         const a=a0+sg*SC_SPREAD,x0=q.pvx-uy*sg*SC_OFF,y0=q.pvy+ux*sg*SC_OFF,b2={x:x0,y:y0,px:x0,py:y0},r2=[];
         for(let i=0;i<NSEG;i++){const w=(Math.random()-0.5)*0.6,x=q.pvx-uy*w,y=q.pvy+ux*w;r2.push({x,y,px:x,py:y});}
         r2.push(b2);
-        this.ex.push({h:{b:b2,ux:Math.cos(a),uy:Math.sin(a),st:'fly',trail:[],offT:null,rel:0,tg:null,arm:-1,sl:LEN,sdir:0},rope:r2,rl:8,taut:false});
+        this.ex.push({h:{b:b2,ux:Math.cos(a),uy:Math.sin(a),st:'fly',trail:[],offT:null,rel:0,tg:null,arm:-1,sl:LEN,sdir:0,slot:sg},rope:r2,rl:8,taut:false});
       }
     }
     this.recoil=7;
@@ -1342,6 +1441,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     h.st='drift';h.tg=null;
   }
   catchH(q){ // 銛が機械に戻った
+    {const hh=this.h,i=(hh&&hh.slot!==undefined?hh.slot:0)+1;if(this.ld&&this.ld[i]===null)this.ld[i]=0.12;} // その銛の砲身だけ、独立してセットされる（待っていた本体が先にセット済みなら、そのまま）
     this.muzzE.explode(12,q.pvx,q.pvy);
     this.cameras.main.shake(70,0.004);
     this.h=null;this.rope=null;this.cool=0.12;this.recoil=5;this.reeling=false;
@@ -1410,7 +1510,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     const c=this.cells[i];if(!c||(this.blank&&this.blank[i]))return 0;
     return c.p+((c.p>0||c.tx>0.5)?this.turN()*c.tx:0);
   }
-  stepTurret(dr){ // トゲ砲台（装備中のみ）：自分の位置の区画と左右6区画のトゲをせり出し、離れた区画は沈める（ゆっくり）
+  stepTurret(dr){ // トゲ砲台（装備中のみ）：自分の位置の区画と左右13区画のトゲをせり出し、離れた区画は沈める（ゆっくり）
     if(this.turN()>0&&!this.cells){this.ensureCells();this.buildSpk();} // 砲台を装備していれば、壁のトゲがなくても区画を用意する
     const cs=this.cells,w=this.wp;if(!cs||!w)return;
     const T=this.turN(),N=cs.length;let ci=-1;
@@ -1476,6 +1576,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     });
   }
   applyUpg(id){
+    if(!save.upg[id]){save.upg[id]=1;persist();} // 強化図鑑：一度でも選んだ強化は解放される
     if(id==='hf')this.php=this.maxhp;
     else if(id[0]==='h')this.php=Math.min(this.maxhp,this.php+(id==='h2'?2:1));
     else if(id[0]==='m'){const n=id==='m3'?3:id==='m2'?2:1;this.maxhp+=n;this.php+=n;}
@@ -1969,7 +2070,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(e.type==='clam'&&e.shell){ // 貝：シールドには弾かれる。割れて見えている本体にだけ刺さり、刺さるとシールドが砕け散る
       const c=Math.cos(e.a),sn=Math.sin(e.a),dx=tx-e.x,dy=ty-e.y,lx=dx*c+dy*sn,ly=-dx*sn+dy*c;
       if(Math.abs(lx)>2*CL_S+10||Math.abs(ly)>2*CL_S+10)return false;
-      if(this.clamPlateHit(e,lx,ly)){e.sf=1;this.deflect(tx,ty,1.25);return true;}
+      if(this.clamPlateHit(e,lx,ly)){e.sf=1;this.deflect(tx,ty,1.25,true);return true;}
       if(Math.hypot(lx,ly)<CL_B+3){this.embed(tx,ty,e);this.shatterShell(e);return true;}
       return false;
     }
@@ -1977,11 +2078,11 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       for(let i=0;i<e.arms.length;i++){
         if(!e.arms[i].alive)continue;
         const g=this.armGeo(e,i);
-        if(dseg(tx,ty,g.sx,g.sy,g.hx,g.hy)<armR(e)+8){if(e.sp>0)this.deflect(tx,ty);else this.embed(tx,ty,e,i);return true;} // 回転攻撃中は、盾に刺さらず弾かれる
+        if(dseg(tx,ty,g.sx,g.sy,g.hx,g.hy)<armR(e)+8){if(e.sp>0)this.deflect(tx,ty,1.25,true);else this.embed(tx,ty,e,i);return true;} // 回転攻撃中は、盾に刺さらず弾かれる
       }
       if(Math.hypot(tx-e.x,ty-e.y)<e.r+2){
-        if(e.sp===1||e.sp===2){this.spinBreak(e);this.deflect(tx,ty);return true;} // 回転攻撃中に本体へ当てると、回転が止まる（刺さりはせず弾かれる）
-        if(e.arms.some(a=>a.alive)){this.deflect(tx,ty);return true;}
+        if(e.sp===1||e.sp===2){this.spinBreak(e);this.deflect(tx,ty,1.25,true);return true;} // 回転攻撃中に本体へ当てると、回転が止まる（刺さりはせず弾かれる）
+        if(e.arms.some(a=>a.alive)){this.deflect(tx,ty,1.25,true);return true;}
         this.embed(tx,ty,e);return true;
       }
       return false;
@@ -2009,12 +2110,13 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(!playSnd('glassbreak',1)){sfx(300,30,0.8,0.7,'sawtooth');sfx(900,100,0.5,0.4,'square');} // 貝のシールドが砕けた音：敵が砕ける音（glassbreak）と同じ
     this.note('Shield shattered! Slam it into the wall!');
   }
-  deflect(tx,ty,pm){ // ボス本体は盾が残っている間、銛を弾く（pm＝キーン音の音程の倍率。貝のシールドは高め）
+  deflect(tx,ty,pm,wallSnd){ // ボス本体は盾が残っている間、銛を弾く（pm＝キーン音の音程の倍率。wallSnd＝trueなら、音は壁で2回目に跳ね返る時の音と同じ。貝のシールドが使う）
     const h=this.h;
     h.dvx=-h.ux*this.spd*0.2;h.dvy=-h.uy*this.spd*0.2;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);
     h.st='drift';h.trail.length=0;
     this.hitE.explode(12,tx,ty);this.cameras.main.shake(90,0.005);
-    pingSfx(0.4,pm||0.85,1.3);
+    if(wallSnd)pingSfx(0.12,1.5,0.35); // 壁に当たったあと、漂う銛が2回目に跳ね返る音と同じ設定（小さくて軽い金属音）
+    else pingSfx(0.4,pm||0.85,1.3);
     if(!this.hintDef){this.hintDef=true;this.note('The body is tough... aim for the shield!');}
   }
 
@@ -2136,16 +2238,16 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const r=rope,pn=rl?(rl?1:0):0;
       const col=rl?((255<<16)|(Math.round(179-128*pn)<<8)|Math.round(71+14*pn)):(tz?0xffe6a8:0x8ea0c8);
       const sk=main&&this.snapT>0&&h?this.snapT/0.25:0; // 引いた直後は、実際に張った紐そのものを一瞬白く太く描く
-      if(sk>0)g.lineStyle(4+5*sk,sk>0.4?0xffffff:0xffe6a8,1);
-      else g.lineStyle(rl?3+5*pn:(tz?4:2.5),col,tz?1:0.85);
+      if(sk>0)g.lineStyle(8+10*sk,sk>0.4?0xffffff:0xffe6a8,1);
+      else g.lineStyle(rl?6+10*pn:(tz?8:5),col,tz?1:0.85);
       const fuse=main&&h&&h.st==='stuck'&&h.fz&&!rl&&!(sk>0); // 花火で刺さっている間（引いた直後・巻き取り中の演出は優先）
       if(fuse){
         const fzz=h.fz,draw=(pts,w,c,al)=>{if(pts.length<2)return;g.lineStyle(w,c,al);g.beginPath();g.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);g.strokePath();};
-        if(fzz.w>0){const u=1-fzz.w/FW_GAP;draw(r,3+u,lerpC(0x7c8296,0xffe6a8,u),0.95+0.05*u);} // 花火のあとの間隔：灰色から、徐々に導火線の黄色に戻っていく
+        if(fzz.w>0){const u=1-fzz.w/FW_GAP;draw(r,6+2*u,lerpC(0x7c8296,0xffe6a8,u),0.95+0.05*u);} // 花火のあとの間隔：灰色から、徐々に導火線の黄色に戻っていく
         else{
           const [burnt,fresh]=polySplit(r,fzz.d);
-          draw(burnt,3,0x7c8296,0.95);   // 燃えたあと＝灰色
-          draw(fresh,4,0xffe6a8,1);      // まだ燃えていない＝黄色
+          draw(burnt,6,0x7c8296,0.95);   // 燃えたあと＝灰色
+          draw(fresh,8,0xffe6a8,1);      // まだ燃えていない＝黄色
         }
       }else{
         g.beginPath();g.moveTo(r[0].x,r[0].y);
@@ -2155,7 +2257,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(sk>0){g.lineStyle(3,0xffffff,sk);g.strokeCircle(h.b.x,h.b.y,10+50*(1-sk));} // 先端の衝撃リング
     }
     // 銛
-    if(h&&part!=='rope'){
+    if(h&&part!=='rope'&&!(h.home&&h.st==='back')){
       const n=h.trail.length;
       for(let i=1;i<n;i++){g.lineStyle(3*i/n,0xffb347,0.6*i/n);g.lineBetween(h.trail[i-1].x,h.trail[i-1].y,h.trail[i].x,h.trail[i].y);}
       let ang;
@@ -2165,10 +2267,10 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       else ang=Math.atan2(h.b.y-q.pvy,h.b.x-q.pvx);
       g.save();g.translateCanvas(h.b.x,h.b.y);g.rotateCanvas(ang);
       const L=h.st==='stuck'?Math.max(1,h.sl):LEN; // 刺さっている間は、縮んだ判定の長さのまま描く
-      this.harpoon(g,L,this.eq()==='bomb'&&!h.bd); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
+      this.harpoon(g,L,this.eq()==='bomb'&&!h.bd,this.eq()==='firework'); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
       if(h.st==='stuck'){ // 砕ける前触れ：最後は白く点滅（ひびの線は描かない）
         const k=h.stT/this.stuckT;
-        if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2,-7,L+8,14,5);}
+        if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2,-13,L+8,26,6);}
       }
       g.restore();
     }
@@ -2275,10 +2377,12 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     }
     if(h.st==='back'){
       h.trail.length=0;
-      const dx=pvx-b.x,dy=pvy-b.y,d=Math.hypot(dx,dy)||1,sp=Math.min(d,1500*STEP);
+      let tx=pvx,ty=pvy;if(this.eq()==='scatter'&&h.slot){tx-=Math.sin(q.psi)*h.slot*SC_OFF;ty+=Math.cos(q.psi)*h.slot*SC_OFF;} // 散弾：自分の砲身（左右は発射位置）へ戻る
+      const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy)||1,sp=Math.min(d,1500*STEP);
       b.x+=dx/d*sp;b.y+=dy/d*sp;
       this.ropeLen=Math.hypot(pvx-b.x,pvy-b.y)*1.03;
       if(d<26&&(this.inEx||!this.ex.length)){this.catchH(q);return;} // 本体は、左右の銛が全部戻りきるまで回収を待つ
+      if(d<26&&this.ld&&this.ld[(h.slot||0)+1]===null){this.ld[(h.slot||0)+1]=0.12;h.home=true;} // 本体は待っている間も、自分の砲身にはセットされる（待つ銛は描かない）
     }else if(h.st==='stuck'){
       const tg=h.tg;
       if(!tg||tg.dead){h.st='back';}
@@ -2312,7 +2416,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     this.vel+=(inx*SPEED*this.mv-this.vel)*(1-Math.exp(-(inx*this.vel<0?TURN_K:14)*STEP)); // 今の動きと逆向きに入力したときだけ、追従を速くする（切り返しブースト）
     this.s+=this.vel*STEP;
     if(RAIL.open){if(this.s<0){this.s=0;if(this.vel<0)this.vel=0;}else if(this.s>L){this.s=L;if(this.vel>0)this.vel=0;}}
-    this.cool-=STEP;this.hcool-=STEP;this.yankC-=STEP;
+    this.cool-=STEP;this.hcool-=STEP;this.yankC-=STEP;if(this.ld)for(let i=0;i<3;i++)if(this.ld[i]>0)this.ld[i]-=STEP;
     this.inv=Math.max(0,this.inv-STEP);this.shInv=Math.max(0,this.shInv-STEP);this.shA+=PSH_W*STEP;
     if(this.comboT>0){this.comboT-=STEP;if(this.cbi)this.cbi.style.transform='scaleX('+Math.max(0,this.comboT/1.4)+')';if(this.comboT<=0){this.combo=0;comboEl.style.opacity=0;}}
     this.recoil*=Math.exp(-18*STEP);
@@ -2349,20 +2453,21 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(this.h){this.stepHarpoon(q);if(this.h)this.stepExtras(q);}
   }
 
-  harpoon(g,len,bomb){ // bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
+  harpoon(g,len,bomb,fw){ // bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
     const hl=Math.min(26,len),k=hl/26;
-    g.fillStyle(0xcfd8ee,1);g.fillRect(0,-2.2,Math.max(0,len-18),4.4);
+    if(fw){ // 花火砲台：白っぽい軸に赤い斜めの縞（縞は軸の長さに合わせて数が変わる）
+      const sl=Math.max(0,len-18);g.fillStyle(0xf1e3c0,1);g.fillRect(0,-4.4,sl,8.8);
+      g.lineStyle(2,0xc8412f,1);for(let x=12;x+6<=sl;x+=16)g.lineBetween(x,-4.4,x+6,4.4);
+    }else{g.fillStyle(0xcfd8ee,1);g.fillRect(0,-4.4,Math.max(0,len-18),8.8);}
     g.fillStyle(0xffb347,1);
-    g.fillTriangle(len,0,len-hl,-6*k,len-hl*22/26,0);g.fillTriangle(len,0,len-hl*22/26,0,len-hl,6*k);
-    g.fillStyle(0x8fa3d6,1);g.fillCircle(0,0,3.5*Math.min(1,len/30));
+    g.fillTriangle(len,0,len-hl,-12*k,len-hl*22/26,0);g.fillTriangle(len,0,len-hl*22/26,0,len-hl,12*k);
     if(bomb&&len>=44){ // 爆弾：矢じりの少し手前に、軸が貫通する形で黒い爆弾が刺さっている
       const x=len-34;
-      g.fillStyle(0x0e1019,1);g.fillCircle(x,0,8);
-      g.lineStyle(1.5,0x4a5170,1);g.strokeCircle(x,0,8);
-      g.fillStyle(0x7a84a6,0.9);g.fillCircle(x-2.5,-3,2); // つや
-      g.fillStyle(0xcfd8ee,1);g.fillRect(x-8,-1.1,16,2.2); // 爆弾を貫く軸
-      g.lineStyle(2,0xcfa15a,1);g.lineBetween(x+1,-8,x+4,-13); // 導火線
-      g.fillStyle(0xffb347,1);g.fillCircle(x+4,-13.5,2.3);g.fillStyle(0xffffff,0.9);g.fillCircle(x+4,-13.5,1);
+      g.fillStyle(0x0e1019,1);g.fillCircle(x,0,12);
+      g.lineStyle(2,0x4a5170,1);g.strokeCircle(x,0,12);
+      g.fillStyle(0x7a84a6,0.9);g.fillCircle(x-4,-5,3); // つや
+      g.lineStyle(3,0xcfa15a,1);g.lineBetween(x+1,-12,x+5,-19); // 導火線
+      g.fillStyle(0xffb347,1);g.fillCircle(x+5,-19.5,3.2);g.fillStyle(0xffffff,0.9);g.fillCircle(x+5,-19.5,1.4);
     }
   }
 
@@ -2559,12 +2664,12 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     this.drawHarp(g,q,h,this.rope,true,undefined,'harp');
     // 機械本体（レールに対して角度固定）。無敵中は点滅
     const rc=this.recoil,ma=(this.inv>0&&(Math.floor(this.inv*16)%2))?0.3:1;
-    g.save();g.translateCanvas(q.p.x,q.p.y);g.rotateCanvas(q.phi);
+    g.save();g.translateCanvas(q.p.x,q.p.y);g.rotateCanvas(q.phi);g.scaleCanvas(BS,BS);
     const skn=SHIP_SKIN[this.eq()]||SHIP_SKIN.std; // 装備中の砲台の見た目
     g.fillStyle(skn.wh,ma);g.fillRoundedRect(-10,-24,20,11,3);g.fillRoundedRect(-10,13,20,11,3);
     g.fillStyle(skn.ax,ma);g.fillCircle(0,-18,3.5);g.fillCircle(0,18,3.5);
-    g.fillStyle(skn.bd,ma);g.fillRoundedRect(3-rc,-19,24,38,6);
-    g.lineStyle(2,skn.ol,ma);g.strokeRoundedRect(3-rc,-19,24,38,6);
+    g.fillStyle(skn.bd,ma);g.fillRoundedRect(3-rc,-14,24,28,6);
+    g.lineStyle(2,skn.ol,ma);g.strokeRoundedRect(3-rc,-14,24,28,6);
     if(skn.bodyDeco)skn.bodyDeco(g,rc,ma);
     g.restore();
     for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'rope'); // 紐：本体より上、発射台（銃身）より下
@@ -2579,8 +2684,10 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     }
     // 銛の発射台（敵を向く）＋装填中の銛
     g.save();g.translateCanvas(q.pvx,q.pvy);g.rotateCanvas(q.psi);
-    if(!h&&this.cool<=0){g.translateCanvas(-6,0);this.harpoon(g,LEN,this.eq()==='bomb');g.translateCanvas(6,0);} // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
-    g.fillStyle(skn.ba,ma);g.fillRoundedRect(-10,-6,28,12,4);if(skn.barDeco)skn.barDeco(g,ma); // 銃身は角が丸い四角 // 銃身：前端は据え置き。後ろ端は、装填中の銛の尻（中心-6・半径3.5＝-9.5）をギリギリ覆う位置
+    if(this.eq()==='scatter'){ // 散弾：砲身ごとに、セット済み（戻って装填の待ちが終わった）の銛を描く。真ん中・左右とも同じ形
+      for(const sl of[-1,0,1]){const v=this.ld[sl+1];if(v!==null&&v!==undefined&&v<=0){g.save();g.translateCanvas(0,sl*SC_OFF);g.rotateCanvas(sl*SC_SPREAD);g.translateCanvas(-6,0);this.harpoon(g,LEN,false,false);g.restore();}}
+    }else if(!h&&this.cool<=0){const bm=this.eq()==='bomb',ox=bm?82-LEN:-6;g.translateCanvas(ox,0);this.harpoon(g,LEN,bm,this.eq()==='firework');g.translateCanvas(-ox,0);} // 爆弾：爆弾の後ろ端（中心-半径12）が銃身の先端（18×BS=36）にちょうど触れる位置にセット // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
+    g.scaleCanvas(BS,BS);g.fillStyle(skn.ba,ma);if(skn.barBody)skn.barBody(g,ma);else g.fillRoundedRect(-10,-6,28,12,4);if(skn.barDeco)skn.barDeco(g,ma); // 銃身は角が丸い四角 // 銃身：前端は据え置き。後ろ端は、装填中の銛の尻（中心-6・半径3.5＝-9.5）をギリギリ覆う位置
     g.restore();
   }
 
