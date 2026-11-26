@@ -161,7 +161,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="pauseDim">PAUSED<div id="pauseRow"><button id="pauseResume" class="pbtn" type="button" aria-label="Resume"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button><button id="pauseEnd" class="pbtn" type="button" aria-label="End run"><svg viewBox="0 0 24 24"><rect x="4.8" y="3.5" width="2.4" height="17.5" rx="1.2"/><path d="M7 4.6h11.6l-3.1 4.4 3.1 4.4H7z"/></svg></button></div></div><button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg></button>
 <div id="over"><canvas id="pile"></canvas>
   <div id="ovc"><div id="ovNew">NEW RECORD!</div><b id="ovb"></b><span id="ovs"></span><div id="tap">Tap to retry</div><button id="homeBtn" class="pill" type="button">Home</button></div><div id="ovCoin" class="coinBox"><i class="cn"></i><span id="ovCoinN">0</span></div><div id="ovGain"></div></div>
-<div id="set"><div id="setTop"><button id="setBack" class="pill" type="button">Back</button><div id="setT">Settings</div></div><div id="setList"><div class="srow"><span>Sound FX</span><button id="sfxSw" class="sw" type="button" role="switch" aria-checked="true" aria-label="Sound FX"><i></i></button></div><div class="srow"><span>How to play</span><button id="tutRe" class="pill" type="button">Watch again</button></div></div></div>
+<div id="set"><div id="setTop"><button id="setBack" class="pill" type="button">Back</button><div id="setT">Settings</div></div><div id="setList"><div class="srow"><span>Sound FX</span><button id="sfxSw" class="sw" type="button" role="switch" aria-checked="true" aria-label="Sound FX"><i></i></button></div><div class="srow"><span>Total play time</span><span id="ptVal">0m 0s</span></div><div class="srow"><span>How to play</span><button id="tutRe" class="pill" type="button">Watch again</button></div></div></div>
 <div id="shop"><div id="shopTop"><button id="shopBack" class="pill" type="button">Back</button><div class="coinBox"><i class="cn"></i><span id="shopCoin">0</span></div></div><div id="shopRow"></div></div>
 <div id="zk"><div id="zkTop"><button id="zkBack" class="pill" type="button">Back</button><div id="zkT">Upgrade Codex</div><div id="zkCnt"></div></div><div id="zkList"></div></div>
 <div id="upg"><div id="upgT"></div><div id="upgHp"></div><div id="upgRow"></div><button id="upgRr" type="button"></button></div>
@@ -644,8 +644,8 @@ overEl.addEventListener('pointerup',e=>{ // ホーム画面へボタン以外は
 });
 
 /* ===== セーブ（コイン・買った砲台・装備中） ===== */
-const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0,maxDmg:0,sfx:true,tut:0,upg:{}}; // tut＝チュートリアルを終えたら1
-try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(d.owned)Object.assign(save.owned,d.owned);if(d.upg&&typeof d.upg==='object')Object.assign(save.upg,d.upg);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
+const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0,maxDmg:0,sfx:true,tut:0,upg:{},playSec:0}; // tut＝チュートリアルを終えたら1
+try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(typeof d.playSec==='number'&&d.playSec>=0)save.playSec=d.playSec;if(d.owned)Object.assign(save.owned,d.owned);if(d.upg&&typeof d.upg==='object')Object.assign(save.upg,d.upg);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
 const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}};
 // 貰えるコイン＝到達したウェーブだけで決まる（倒した数は関係ない）。1ウェーブ10枚、5ウェーブごと（ボス）に+40枚
 let lastGain=0; // 直近のリザルトで貰ったコイン
@@ -656,7 +656,7 @@ function updCoin(){document.getElementById('homeCoin').textContent=save.coins;do
 
 /* ===== ホーム／リザルト画面 ===== */
 const homeEl=document.getElementById('home'),toastEl=document.getElementById('toast'),tutEl=document.getElementById('tut'),tutCEl=document.getElementById('tutc');
-/* ===== 全体のプレイ統計（Firebase Realtime Database）：累計プレイ回数と、累計プレイ時間（一人ずつの秒数を足す＝同時に2人なら2倍）。FB_DB_URLが未設定／テストモード／通信できない時は、何もせず静かに諦める。プレイ画面にいる間は接続したままにして、ホームに戻る／タブを裏に回すと切る ===== */
+/* ===== 全体のプレイ統計（Firebase Realtime Database）：累計プレイ回数と、累計プレイ時間（一人ずつの秒数を足す＝同時に2人なら2倍。stats/totalSeconds に整数の秒で貯める）。FB_DB_URLが未設定／テストモード／通信できない時は、何もせず静かに諦める。プレイ画面にいる間は接続したままにして、ホームに戻る／タブを裏に回すと切る ===== */
 const FB_DB_URL='https://railreel-default-rtdb.asia-southeast1.firebasedatabase.app'; // ←Realtime DatabaseのURLに書き換える（このままだと完全に無効）
 const ST={D:null,db:null,bad:0,sec:0,plays:0,busy:false,up:false,conn:false,linking:false,retry:0};
 const stOn=()=>!TEST_MODE&&ST.bad<3&&FB_DB_URL.indexOf('YOUR-PROJECT')<0;
@@ -680,7 +680,7 @@ async function stSend(){
   const sec=Math.min(ST.sec,60),plays=Math.min(ST.plays,20);ST.sec=0;ST.plays=0; // 送れなかった分は捨てる（なくてもいい機能）
   try{
     const D=ST.D,w=[];
-    if(sec)w.push(D.set(D.ref(ST.db,'stats/totalMinutes'),D.increment(sec/60)));
+    if(sec)w.push(D.set(D.ref(ST.db,'stats/totalSeconds'),D.increment(sec))); // 秒の整数のまま足す（分に割ると小数の誤差がたまる）
     if(plays)w.push(D.set(D.ref(ST.db,'stats/totalPlays'),D.increment(plays)));
     await Promise.race([Promise.all(w),new Promise((_,j)=>setTimeout(j,8000))]);
     ST.bad=0;
@@ -697,6 +697,10 @@ setInterval(()=>{ // 1秒ごと：プレイ中（結果画面・ホーム・裏�
 },1000);
 let tutLast='',demoDone=false; // demoDone＝見本（チュートリアルを自動で通して見せる）を見せ終えた（ページを開いている間）
 let screen='home',ovAt=0;
+setInterval(()=>{ // 総合プレイ時間：1秒ごと、プレイ中（結果画面・ホーム・一時停止中・裏タブは除く）なら1秒足す。10秒ごとにセーブ（設定の「Total play time」に出る）
+  if(screen==='play'&&!document.hidden&&overEl.style.display!=='flex'&&!paused){save.playSec=(save.playSec||0)+1;if(save.playSec%10===0)persist();}
+},1000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});addEventListener('pagehide',persist); // 離れる時にも保存
 let paused=false; // 一時停止中（右上のボタン／Pキー／Escキー／タブを離れた時）
 const pauseBtn=document.getElementById('pauseBtn');
 function setPaused(v){
@@ -846,7 +850,9 @@ document.getElementById('shopBtn').addEventListener('pointerup',()=>{renderShop(
 document.getElementById('shopBack').addEventListener('pointerup',()=>{shopEl.style.display='none';updCoin();});
 updCoin();
 const setEl=document.getElementById('set'),sfxSw=document.getElementById('sfxSw');
-const updSet=()=>sfxSw.setAttribute('aria-checked',save.sfx?'true':'false');
+const fmtT=t=>{const h=Math.floor(t/3600),m=Math.floor(t%3600/60);return h?h+'h '+m+'m':m+'m '+(t%60)+'s';}; // 総合プレイ時間の表示（1時間以上は「h m」、それ未満は「m s」）
+const ptVal=document.getElementById('ptVal');
+const updSet=()=>{sfxSw.setAttribute('aria-checked',save.sfx?'true':'false');ptVal.textContent=fmtT(save.playSec||0);};
 document.getElementById('tutRe').addEventListener('pointerup',e=>{save.tut=0;demoDone=false;persist();e.target.textContent='Starts next play';});
 document.getElementById('setBtn').addEventListener('pointerup',()=>{updSet();setEl.style.display='flex';});
 document.getElementById('setBack').addEventListener('pointerup',()=>{setEl.style.display='none';});
