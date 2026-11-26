@@ -292,7 +292,7 @@ const LASER_KB=1500; // レーザーで刺された敵が吹き飛ぶ速さの�
 const KB_V=320;         // 銛が刺さった時に敵が押される速さ（px/秒）
 const EPAL={norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a}}; // 敵の種類ごとの見た目（トゲの数・色）
 const SHAPES=['line','square','circle','tri']; // ステージ5つごとに、この順で変わる（直線→四角形→円→三角形→直線…）
-const TEST_MODE=true; // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）
+const TEST_MODE=false; // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）
 if(TEST_MODE)document.body.classList.add('test');
 const TEST_URL=TEST_MODE?location.search:''; // テストモードでなければURLの指定は無視する
 let testShape=(()=>{const m=TEST_URL.match(/[?&]shape=(\w+)/);return m&&SHAPES.includes(m[1])?m[1]:'default';})(); // テスト用：最初のステージの形（選んだ形から始まり、5ステージごとに順に変わる）。default＝直線から
