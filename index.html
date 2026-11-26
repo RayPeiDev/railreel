@@ -76,6 +76,9 @@ body:not(.play) #hud,body:not(.play) #stk,body:not(.play) #fb{display:none}
 #skip{display:none;position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif}
 #tutSkip{display:none;position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif} /* チュートリアルを丸ごと飛ばすボタン（左上）。見本と実践の間ずっと出る */
 body.play.tut #tutSkip,body.play.free #tutSkip{display:block}
+body.free #ebb{display:none} /* 自由に試すパート：敵の体力バーは出さない（PRACTICEの文字だけ残す） */
+#freeEnd{display:none;position:fixed;left:50%;top:26%;transform:translateX(-50%);z-index:20;padding:14px 34px;border-radius:12px;border:2px solid rgba(255,255,255,.85);background:rgba(30,60,120,.85);color:#fff;font:700 22px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.08em;box-shadow:0 0 22px rgba(120,180,255,.6)} /* 与えたダメージが100に達したら出る終了ボタン */
+body.free.freeDone #freeEnd{display:block}
 body.free #hp{display:none} /* 自由に試すパート：ライフの概念がないのでハートは出さない */
 #pauseDim{display:none;position:fixed;inset:0;background:rgba(5,8,16,.7);color:#fff;font:700 34px/1 Rajdhani,system-ui,sans-serif;letter-spacing:8px;text-shadow:0 2px 8px rgba(0,0,0,.7);flex-direction:column;align-items:center;justify-content:center;gap:26px}
 #pauseRow{display:flex;gap:24px}
@@ -154,7 +157,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="hud"><div id="hp"></div><div id="eb"><div id="stg"></div><div id="ebb"><div id="ebf"></div></div></div><div id="combo"></div><div id="msg"></div></div>
 <div id="stk"><div id="kn"></div></div>
 <div id="fb">FIRE</div>
-<button id="skip" type="button">Skip ▶▶</button><button id="tutSkip" type="button">Skip ▶▶</button>
+<button id="skip" type="button">Skip ▶▶</button><button id="tutSkip" type="button">Skip ▶▶</button><button id="freeEnd" type="button">START ▶</button>
 <div id="pauseDim">PAUSED<div id="pauseRow"><button id="pauseResume" class="pbtn" type="button" aria-label="Resume"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button><button id="pauseEnd" class="pbtn" type="button" aria-label="End run"><svg viewBox="0 0 24 24"><rect x="4.8" y="3.5" width="2.4" height="17.5" rx="1.2"/><path d="M7 4.6h11.6l-3.1 4.4 3.1 4.4H7z"/></svg></button></div></div><button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg></button>
 <div id="over"><canvas id="pile"></canvas>
   <div id="ovc"><div id="ovNew">NEW RECORD!</div><b id="ovb"></b><span id="ovs"></span><div id="tap">Tap to retry</div><button id="homeBtn" class="pill" type="button">Home</button></div><div id="ovCoin" class="coinBox"><i class="cn"></i><span id="ovCoinN">0</span></div><div id="ovGain"></div></div>
@@ -164,7 +167,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="upg"><div id="upgT"></div><div id="upgHp"></div><div id="upgRow"></div><button id="upgRr" type="button"></button></div>
 <div id="pick" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.88);flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font:16px Rajdhani,system-ui,sans-serif"></div>
 <div id="home">
-  <div id="ttl">Rail<br>Reel</div>
+  <div id="ttl"><span>R</span><span>a</span><span>i</span><span>l</span><br><span>R</span><span>e</span><span>e</span><span>l</span></div>
   <div id="menu">
     <div class="mb sd"><button id="shopBtn" type="button" aria-label="Shop"><svg viewBox="0 0 24 24"><path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg></button>Shop</div>
     <div class="mb pl"><button id="playBtn" type="button" aria-label="Play"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button></div>
@@ -304,7 +307,7 @@ const LASER_KB=1500; // レーザーで刺された敵が吹き飛ぶ速さの�
 const KB_V=320;         // 銛が刺さった時に敵が押される速さ（px/秒）
 const EPAL={norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a}}; // 敵の種類ごとの見た目（トゲの数・色）
 const SHAPES=['line','square','circle','tri']; // ステージ5つごとに、この順で変わる（直線→四角形→円→三角形→直線…）
-const TEST_MODE=false; // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）
+const TEST_MODE=(()=>{try{const v=localStorage.getItem('railreel.test');return v==='1';}catch(e){return false;}})(); // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）。タイトルの文字を EERIE LAIR の順にタップするたびに切り替わる（保存して再読み込み。何も保存されていない時はfalse＝通常モード）
 if(TEST_MODE)document.body.classList.add('test');
 const TEST_URL=TEST_MODE?location.search:''; // テストモードでなければURLの指定は無視する
 let testShape=(()=>{const m=TEST_URL.match(/[?&]shape=(\w+)/);return m&&SHAPES.includes(m[1])?m[1]:'default';})(); // テスト用：最初のステージの形（選んだ形から始まり、5ステージごとに順に変わる）。default＝直線から
@@ -333,16 +336,16 @@ function shieldPtsR(r,side,rot){ // 盾を本体の中心まわりにrotだけ�
   const p=shieldPts(r,side);if(!rot)return p;const c=Math.cos(rot),s=Math.sin(rot);
   return{sx:p.sx*c-p.sy*s,sy:p.sx*s+p.sy*c,hx:p.hx*c-p.hy*s,hy:p.hx*s+p.hy*c};
 }
-function armPtsE(e,i){ // 盾iの位置（本体の座標系）。通常の三角形の構え→左右に開いた姿勢（e.spK:0〜1）。開いた二枚の盾は、本体を中心に一本の棒のように並び、e.spAだけ一緒に回る
+function armPtsE(e,i){ // 盾iの位置（本体の座標系）。通常の三角形の構え→本体を両側から挟む姿勢（e.spK:0〜1）。回転攻撃中の二枚の盾は、本体に接する平行な板になり、本体を挟んだまま一緒にe.spAだけ回る
   const side=i?1:-1,p0=shieldPtsR(e.r,side,e.arms[i].rot),k=e.spK||0;
   if(k<=0)return p0;
-  const Ls=Math.hypot(3*e.r,SQ3*e.r),th=Math.PI/2+(e.spA||0),c=Math.cos(th)*side,s=Math.sin(th)*side,r0=e.r+SPN_GAP,r1=r0+Ls;
-  const sx=c*r0,sy=s*r0,hx=c*r1,hy=s*r1;
+  const Ls=Math.hypot(3*e.r,SQ3*e.r),th=e.spA||0,ux=Math.cos(th),uy=Math.sin(th),o=e.r+SH_R,cx=-uy*side*o,cy=ux*side*o,h=Ls/2; // 板の内側の面が本体の円に接する（中心線は本体の中心からr+SH_R）。板の向きはux,uy
+  const sx=cx+ux*h,sy=cy+uy*h,hx=cx-ux*h,hy=cy-uy*h;
   return{sx:p0.sx+(sx-p0.sx)*k,sy:p0.sy+(sy-p0.sy)*k,hx:p0.hx+(hx-p0.hx)*k,hy:p0.hy+(hy-p0.hy)*k};
 }
 const ROPE_K=450,ROPE_C=26,ROPE_OVER=90; // 紐の上限を超えた時のバネ：引く強さ・ブレーキ・これ以上は伸ばさない量(px)。Kを上げるとガクン寄り、下げるとぐーっと伸びる
 const DRIFT_K=1.5;                     // ボス：パーツをもぎ取った時に漂う力の倍率（1で反対側の壁のあたりまで／大きいほど強く飛ぶ）
-const SPN_OPEN=0.25,SPN_CLOSE=0.45,SPN_W=3,SPN_GAP=8,SPN_V=120,SPN_MAX=8; // ボスの盾の回転攻撃：盾を開く時間(秒)／元に戻る時間(秒)／盾の回転の速さ(rad/秒)／本体の縁から盾の内側の端までの隙間(px)／ゆっくり動く速さ(px/秒)／銛を打ち込まれないときに自分で終わるまでの時間(秒)
+const SPN_OPEN=0.25,SPN_CLOSE=0.45,SPN_W=3,SPN_V=260,SPN_MAX=10; // ボスの盾の回転攻撃：盾を開く時間(秒)／元に戻る時間(秒)／盾の回転の速さ(rad/秒)／まっすぐ進む一定の速さ(px/秒。壁で反射しても変わらない)／銛を打ち込まれないときに自分で終わるまでの時間(秒)
 const TUG_TQ=10;                       // 綱引き：紐の張力が、刺さっている点を自機側へ引いて回す強さ（大きいほど、刺さった点が手前へ素早く回ってくる）
 const TUG_PL=10,TUG_PK=60; // 綱引きの反動：ボスが紐を引く力が自機をレールに沿って引く強さ／自機が連打で引いた時にボス側へ寄る速さ
 const SPN_ONE=2;                       // ボスの盾の回転攻撃：盾が残り1枚のときの回転速度の倍率
@@ -356,7 +359,7 @@ const TEAR_N=7,TEAR_DECAY=0.25;        // ボス：盾を引きちぎるのに�
 const FUNNEL_TAN=0.5; // 直線レール：敵が遠くから迫るとき、レールに平行にならないよう斜め上から入る角度の傾き（tan。0.5≒27度）
 const PC_R=36,PC_LIFE=14,PC_L=48;     // ちぎれた盾の半径／消えるまでの秒数／破片の板の半分の長さ
 function dseg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,t=clamp(((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(px-ax-dx*t,py-ay-dy*t);}
-const STUCK_BASE=2.4,STUCK_MAX=6,SPD_MAX=1500,PULL_MAX=2; // 銛が敵に刺さっていられる時間（秒）の初期値（以前は3.0）と上限／銛の速さの上限／引く力の倍率の上限。刺さりは時間が過ぎると砕けて外れる
+const STUCK_BASE=2.4,FLY_LIM=20,FLY_SUB=10,SPD_SAFE=1500; // 銛が敵に刺さっていられる時間（秒）の初期値（以前は3.0。刺さりは時間が過ぎると砕けて外れる）。強化に上限はない／すり抜け防止：飛ぶ銛が1ステップでFLY_LIM(px)を超えて進む時だけ、FLY_SUB(px)以下ずつ刻んで当たり判定する／SPD_SAFE＝漂い・跳ね返りの勢いに使う銛の速さの頭打ち
 const SPK_N=160,SPK_N0=12,SPK_N1=0,SPK_NMIN=2,SPK_CD=0.15,SPK_PUSH=110,SPK_PUSH2=55; // トゲ地帯：区画の総数はSPK_Nで固定（図形が変わっても同じ。一区画の長さ＝壁一周÷SPK_Nで調整する）／埋める区画の個数＝N0−N1×(強さ−1)（強いほど少ない。強さ1の灰が一番多く、下限NMIN）／トゲの追加ダメージと吹き飛びが連続で入る間隔(秒)／吹き飛ぶ速さ(px/秒)＝PUSH＋PUSH2×強さ
 const AIM_LEAD=0.8; // 照準の先読み補正：0＝なし（敵の今いる位置を狙う）／0.8＝元の値（動く敵の少し先を狙う）
 const SC_SPREAD=0.2,SC_OFF=12; // 散弾：左右の銛の開き角(rad)と、発射位置の横ずれ(px)
@@ -407,43 +410,43 @@ function glassOv(g,r,pal,ra,al){al=al===undefined?1:al;
 const FW_PAL=[[0xff4d6d,0xffd166],[0x4cc9f0,0xf1faee],[0xffb703,0xff5d8f],[0x80ed99,0xffe66d],[0xc77dff,0x72efdd],[0xff9e00,0xffffff]]; // 花火の色の組み合わせ（外側の輪／内側の輪）
 const FW_G=60; // 花火の星が垂れ落ちる強さ（画面の下向き、px/秒²）
 const TUR_R=13,TUR_SPD=5; // トゲ砲台：自分の位置の区画から左右にTUR_R区画ずつ／せり出し・沈みの速さ(1秒あたりの割合。5＝約0.2秒)
-const SPK_DMG=p=>5*p,SPK_PMAX=64,spkLv=p=>1+Math.log2(Math.max(1,p)); // トゲの追加ダメージ＝5×強さ（比例）／強さは色ごとに2倍（灰1・水色2・赤4・紫8・金16、合成でピンク32・白64）／spkLv＝見た目・火花・吹き飛びに使う段階（強さの2を底とする対数。灰1〜金5、ピンク6、白7）
+const SPK_DMG=p=>5*p,spkLv=p=>1+Math.log2(Math.max(1,p)); // トゲの追加ダメージ＝5×強さ（比例）／強さは色ごとに2倍（灰1・水色2・赤4・紫8・金16、合成でピンク32・白64）／spkLv＝見た目・火花・吹き飛びに使う段階（強さの2を底とする対数。灰1〜金5、ピンク6、白7）
 const SPK_COL=[0xe3eaf6,0x3cc8ff,0xff3b4a,0xc35cff,0xffd24a,0xff6e8c,0xffffff]; // 強さ1〜7の色（灰→水色→赤→紫→金→ピンク→白）。1〜5は強化カードのランク色(C〜SS)と同じ。6・7は合成でのみ到達
 function spkCol(p){const f=Math.max(0,Math.min(SPK_COL.length-1,spkLv(p)-1)),i=Math.floor(f),k=f-i,a=SPK_COL[i],b=SPK_COL[Math.min(SPK_COL.length-1,i+1)];const m=sh=>Math.round(((a>>sh)&255)*(1-k)+((b>>sh)&255)*k);return(m(16)<<16)|(m(8)<<8)|m(0);}
 const UPG=[ // ボス撃破ごとの三択。rk＝ランク（0=C 1=B 2=A(赤) 3=S 4=SS）／w＝出やすさ（同ランクは同じ値）。同じ強化は何度でも取れる
-  {id:'h1',rk:0,w:30,ic:'♥',nm:'HP +1',ds:'Restores 1 HP'},
-  {id:'h2',rk:1,w:20,ic:'♥♥',nm:'HP +2',ds:'Restores 2 HP'},
-  {id:'hf',rk:2,w:12,ic:'♥♥♥',nm:'Full Heal',ds:'Restores all HP'},
-  {id:'m1',rk:1,w:20,ic:'♥+',nm:'Max HP +1',ds:'Max HP +1, and heals 1 HP'},
-  {id:'m2',rk:2,w:12,ic:'♥++',nm:'Max HP +2',ds:'Max HP +2, and heals 2 HP'},
-  {id:'m3',rk:3,w:6,ic:'♥+++',nm:'Max HP +3',ds:'Max HP +3, and heals 3 HP'},
-  {id:'rv',rk:4,w:3,ic:'✚',nm:'Revive',ds:'Revive once at full HP after being defeated'},
-  {id:'pu1',rk:0,w:30,ic:'⇦',nm:'Pull Power +15%',ds:'Pulling enemies in gets stronger'},
-  {id:'pu2',rk:1,w:20,ic:'⇦⇦',nm:'Pull Power +30%',ds:'Pulling enemies in gets much stronger'},
-  {id:'pu3',rk:2,w:12,ic:'⇦⇦⇦',nm:'Pull Power +45%',ds:'Pulling enemies in gets even stronger'},
-  {id:'sp1',rk:0,w:30,ic:'➤',nm:'Harpoon Speed +12%',ds:'Faster harpoon, and a harder impact on hit'},
-  {id:'sp2',rk:1,w:20,ic:'➤➤',nm:'Harpoon Speed +24%',ds:'Even faster harpoon, and a much harder impact'},
-  {id:'sp3',rk:2,w:12,ic:'➤➤➤',nm:'Harpoon Speed +36%',ds:'Even faster harpoon, and an even harder impact'},
-  {id:'ru1',rk:0,w:30,ic:'⇒',nm:'Move Speed +15%',ds:'Your ship moves faster along the rail'},
-  {id:'ru2',rk:1,w:20,ic:'⇒⇒',nm:'Move Speed +30%',ds:'Your ship moves even faster along the rail'},
-  {id:'ru3',rk:2,w:12,ic:'⇒⇒⇒',nm:'Move Speed +45%',ds:'Your ship moves much faster along the rail'},
-  {id:'bn1',rk:0,w:30,ic:'◉',nm:'Wall Bounce +5%',ds:'Enemies rebound off walls harder (more repeat wall hits)'},
-  {id:'bn2',rk:1,w:20,ic:'◉◉',nm:'Wall Bounce +10%',ds:'Enemies rebound off walls even harder'},
-  {id:'bn3',rk:2,w:12,ic:'◉◉◉',nm:'Wall Bounce +15%',ds:'Enemies rebound off walls much harder'},
-  {id:'st1',rk:0,w:30,ic:'⏱',nm:'Stick Time +0.4s',ds:'The harpoon stays stuck in enemies longer'},
-  {id:'st2',rk:1,w:20,ic:'⏱⏱',nm:'Stick Time +0.8s',ds:'The harpoon stays stuck in enemies much longer'},
-  {id:'r1',rk:0,w:30,ic:'↻',nm:'Reroll +1',ds:'Gain 1 more reroll of the 3 choices'},
-  {id:'r2',rk:1,w:20,ic:'↻↻',nm:'Reroll +2',ds:'Gain 2 more reroll of the 3 choices'},
-  {id:'r3',rk:3,w:6,ic:'↻↻↻',nm:'Reroll +3',ds:'Gain 3 more reroll of the 3 choices'},
-  {id:'k0',rk:0,w:30,ic:'▲',nm:'Spike Wall (Gray)',ds:'Spikes on a random wall corner. Deals extra damage (small). Overlaps get stronger'},
-  {id:'k1',rk:1,w:20,ic:'▲▲',nm:'Spike Wall (Light Blue)',ds:'Spikes on a random wall corner. Deals extra damage (medium). Overlaps get stronger'},
-  {id:'k2',rk:2,w:12,ic:'▲▲▲',nm:'Spike Wall (Red)',ds:'Spikes on a random wall corner. Deals extra damage (large). Overlaps get stronger'},
-  {id:'k3',rk:3,w:6,ic:'▲▲▲▲',nm:'Spike Wall (Purple)',ds:'Spikes on a random wall corner. Deals extra damage (huge). Overlaps get stronger'},
-  {id:'k4',rk:4,w:3,ic:'▲▲▲▲▲',nm:'Spike Wall (Gold)',ds:'Spikes on a random wall corner. Deals extra damage (extreme). Overlaps get stronger'},
-  {id:'sh1',rk:0,w:30,ic:'⬡',nm:'Shield x1',ds:'A triangle shield rotating around your ship. Blocks damage on enemy contact, knocks the enemy away, and loses 1 piece'},
-  {id:'sh2',rk:1,w:20,ic:'⬡⬡',nm:'Shield x2',ds:'A square shield rotating around your ship. Blocks damage on enemy contact, knocks the enemy away, and loses 1 piece'},
-  {id:'sh4',rk:2,w:12,ic:'⬡⬡⬡',nm:'Shield x4',ds:'A hexagon shield rotating around your ship. Blocks damage on enemy contact, knocks the enemy away, and loses 1 piece'},
-  {id:'sh6',rk:3,w:6,ic:'⬡⬡⬡⬡',nm:'Shield x6',ds:'A octagon shield rotating around your ship. Blocks damage on enemy contact, knocks the enemy away, and loses 1 piece'}
+  {id:'h1',rk:0,w:30,ic:'♥',nm:'HP +1',ds:'Heal 1 HP'},
+  {id:'h2',rk:1,w:20,ic:'♥♥',nm:'HP +2',ds:'Heal 2 HP'},
+  {id:'hf',rk:2,w:12,ic:'♥♥♥',nm:'Full Heal',ds:'Full heal'},
+  {id:'m1',rk:1,w:20,ic:'♥+',nm:'Max HP +1',ds:'Max HP +1 & heal 1'},
+  {id:'m2',rk:2,w:12,ic:'♥++',nm:'Max HP +2',ds:'Max HP +2 & heal 2'},
+  {id:'m3',rk:3,w:6,ic:'♥+++',nm:'Max HP +3',ds:'Max HP +3 & heal 3'},
+  {id:'rv',rk:4,w:3,ic:'✚',nm:'Revive',ds:'Revive once at full HP'},
+  {id:'pu1',rk:0,w:30,ic:'⇦',nm:'Pull Power +15%',ds:'Stronger pull'},
+  {id:'pu2',rk:1,w:20,ic:'⇦⇦',nm:'Pull Power +30%',ds:'Much stronger pull'},
+  {id:'pu3',rk:2,w:12,ic:'⇦⇦⇦',nm:'Pull Power +45%',ds:'Far stronger pull'},
+  {id:'sp1',rk:0,w:30,ic:'➤',nm:'Harpoon Speed +12%',ds:'Faster harpoon, harder hit'},
+  {id:'sp2',rk:1,w:20,ic:'➤➤',nm:'Harpoon Speed +24%',ds:'Even faster, harder hit'},
+  {id:'sp3',rk:2,w:12,ic:'➤➤➤',nm:'Harpoon Speed +36%',ds:'Max speed, hardest hit'},
+  {id:'ru1',rk:0,w:30,ic:'⇒',nm:'Move Speed +15%',ds:'Faster ship'},
+  {id:'ru2',rk:1,w:20,ic:'⇒⇒',nm:'Move Speed +30%',ds:'Even faster ship'},
+  {id:'ru3',rk:2,w:12,ic:'⇒⇒⇒',nm:'Move Speed +45%',ds:'Much faster ship'},
+  {id:'bn1',rk:0,w:30,ic:'◉',nm:'Wall Bounce +5%',ds:'Harder wall rebound'},
+  {id:'bn2',rk:1,w:20,ic:'◉◉',nm:'Wall Bounce +10%',ds:'Even harder rebound'},
+  {id:'bn3',rk:2,w:12,ic:'◉◉◉',nm:'Wall Bounce +15%',ds:'Much harder rebound'},
+  {id:'st1',rk:0,w:30,ic:'⏱',nm:'Stick Time +0.4s',ds:'Harpoon sticks longer'},
+  {id:'st2',rk:1,w:20,ic:'⏱⏱',nm:'Stick Time +0.8s',ds:'Harpoon sticks much longer'},
+  {id:'r1',rk:0,w:30,ic:'↻',nm:'Reroll +1',ds:'+1 reroll'},
+  {id:'r2',rk:1,w:20,ic:'↻↻',nm:'Reroll +2',ds:'+2 rerolls'},
+  {id:'r3',rk:3,w:6,ic:'↻↻↻',nm:'Reroll +3',ds:'+3 rerolls'},
+  {id:'k0',rk:0,w:30,ic:'▲',nm:'Spike Wall (Gray)',ds:'Random wall spike: small damage'},
+  {id:'k1',rk:1,w:20,ic:'▲▲',nm:'Spike Wall (Light Blue)',ds:'Random wall spike: medium damage'},
+  {id:'k2',rk:2,w:12,ic:'▲▲▲',nm:'Spike Wall (Red)',ds:'Random wall spike: large damage'},
+  {id:'k3',rk:3,w:6,ic:'▲▲▲▲',nm:'Spike Wall (Purple)',ds:'Random wall spike: huge damage'},
+  {id:'k4',rk:4,w:3,ic:'▲▲▲▲▲',nm:'Spike Wall (Gold)',ds:'Random wall spike: extreme damage'},
+  {id:'sh1',rk:0,w:30,ic:'⬡',nm:'Shield x1',ds:'+1 square shield layer'},
+  {id:'sh2',rk:1,w:20,ic:'⬡⬡',nm:'Shield x2',ds:'+2 square shield layers'},
+  {id:'sh4',rk:2,w:12,ic:'⬡⬡⬡',nm:'Shield x4',ds:'+4 square shield layers'},
+  {id:'sh6',rk:3,w:6,ic:'⬡⬡⬡⬡',nm:'Shield x6',ds:'+6 square shield layers'}
 ];
 // 三択強化カードのアイコン：UPGのic（記号の並び）を1文字ずつ自前のSVGに置き換えて描く（色はカードのランク色）
 const UI_SV=(vb,body,w,h,cl)=>'<svg class="ui'+(cl?' '+cl:'')+'" viewBox="'+vb+'" style="width:'+(w||1)+'em;height:'+(h||1)+'em">'+body+'</svg>'; // w,h＝表示の大きさ（em）。ハート系は図形ぴったりに切って大きめに描く
@@ -473,7 +476,8 @@ function ucIc(ic){ // 全アイコン共通：個数＝ランク。1〜3個は�
 }
 const upgEl=document.getElementById('upg'),upgT=document.getElementById('upgT'),upgHp=document.getElementById('upgHp'),upgRow=document.getElementById('upgRow'),upgRr=document.getElementById('upgRr');
 upgRr.addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&sc.rerollUpg)sc.rerollUpg();}); // 三択の引き直し
-const PSH_R=38,PSH_W=2.2,PSH_DMG=60,PSH_KB=1200,PSH_MAX=12; // 自機のシールド：多角形の大きさ(px)／回る速さ(rad/秒)／敵に与えるダメージ／敵を吹き飛ばす速さ／最大枚数
+const PSH_STEP=7; // シールドの2枚目以降が、1つ内側より外へ広がる幅(px)
+const PSH_R=38,PSH_W=2.2,PSH_DMG=60,PSH_KB=1200; // 自機のシールド：本体を覆う1枚目の大きさ(px)／回る速さ(rad/秒)／敵に与えるダメージ／敵を吹き飛ばす速さ
 const DEATH_WAIT=1.0; // やられた時：ゲームオーバー画面を出すまで、倒された瞬間の画面を見せる時間(秒)
 const TAN_M=60,TAN_V=200,TAN_A=900; // 敵が自機のレールの接線に近づきすぎた時の押し戻し：近すぎる距離(px。敵の半径に足す)／これ未満の速さの時だけ働く(px/秒)／押し戻す強さ(px/秒²)
 const LIFT_WALL=RW,LIFT_BAND=55,LIFT_UP=90,LIFT_S0=0.3,LIFT_S1=0.7,LIFT_LY0=150,LIFT_LY1=300; // 引いている敵が辺に沿って横から自機に当たるのを避ける補助：壁のレールからの距離(px)／辺からこの幅の中だけ働く(px)／引く先を辺から離す最大の距離(px)／引く向きが「辺に沿う」(S0以下で全力)〜「正面から」(S1以上で無効)の境目(0〜1)／自機からの横の距離(px)：LY0以内で全力〜LY1で無効
@@ -741,6 +745,12 @@ const pickEl=document.getElementById('pick');
 function openPick(){overEl.style.display='none';if(!TEST_MODE){testPick='default';runGame();return;}pickEl.style.display='flex';} // 通常プレイでは選択画面を出さず、そのままスタート
 const skipBtn=document.getElementById('skip');
 skipBtn.addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];if(sc&&sc.skipStage)sc.skipStage();});
+document.getElementById('freeEnd').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&sc.free)sc.freeFinish();}); // 終了ボタン：自由に試すパートを終えてチュートリアル完了
+{ // タイトルの文字を EERIE LAIR の順にタップすると、テストモードと通常モードが切り替わる（保存して再読み込み。表示は出さない）
+  const CODE='eeriel'+'air',ttlEl=document.getElementById('ttl');let keyBuf='';
+  ttlEl.addEventListener('pointerup',e=>{const t=e.target;if(!t||t.tagName!=='SPAN')return;keyBuf=(keyBuf+t.textContent.toLowerCase()).slice(-CODE.length);
+    if(keyBuf===CODE){keyBuf='';try{localStorage.setItem('railreel.test',TEST_MODE?'0':'1');}catch(err){return;}location.reload();}});
+}
 document.getElementById('tutSkip').addEventListener('pointerup',()=>{const sc=game.scene.scenes[0];if(sc&&(sc.tutOn||sc.free))sc.tutSkip();}); // 左上のSkip：チュートリアル全体を飛ばす（見本の最中でも実践の途中でも）。タップで音声も起動するので、イベントは止めない
 function runGame(){const sc=game.scene.scenes[0];fireQ=false;kfire=false;statPlay();setScreen('play');if(sc)sc.scene.restart();}
 function startGame(){openPick();}
@@ -1091,7 +1101,7 @@ class Main extends Phaser.Scene{
     this.cameras.main.setBackgroundColor(0x101728);
     this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=TUT_TURN_T+TUT_GOAL_T;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
     this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
-    this.free=false;document.body.classList.remove('free');document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    this.free=false;this.freeDmg=0;this.freeDone=false;document.body.classList.remove('free','freeDone');document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
 
     if(!this.textures.exists('spark')){
       const tg=this.make.graphics({x:0,y:0,add:false});
@@ -1146,7 +1156,7 @@ class Main extends Phaser.Scene{
   }
   tutEnd(){ // 的が壊れた：チュートリアル完了（二度と出ないようにセーブ）。このあとSTAGE1へ進む
     if(this.demo){this.demoEndT=1.4;return;} // 見本：セーブせず、「Your turn!」を少し見せてから本物のチュートリアルへ
-    this.tutOn=false;this.free=true;document.body.classList.add('free'); // このあと自由に試すパート（ステージ1と同じ・敵は攻撃しない・ライフなし）。完了のセーブはfreeEndかSkipで
+    this.tutOn=false;this.free=true;this.freeDmg=0;this.freeDone=false;document.body.classList.remove('freeDone');document.body.classList.add('free'); // このあと自由に試すパート（ステージ1と同じ・敵は攻撃しない・ライフなし）。完了のセーブはfreeEndかSkipで
     document.body.classList.remove('tut','tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
     this.combo=0;this.comboT=0;comboEl.style.opacity=0;
   }
@@ -1172,9 +1182,12 @@ class Main extends Phaser.Scene{
     }
     else if(this.tp==='run')this.demoMv=this.dT<DEMO_RUN_T?1:0; // 避ける：右へ少しだけ動いて止まる（あとは敵が惰性で壁へ）
   }
+  freeFinish(){ // 終了ボタン：ダメージ100に達した後、押すとチュートリアルを終えてSTAGE1から始める
+    if(!this.free||!this.freeDone)return;this.tutSkip();
+  }
   tutSkip(){ // 左上のSkip：チュートリアル全体を飛ばす。二度と出ないようにセーブして、ステージ1から始め直す
     if(this.demoFin)return;this.demoFin=true;demoDone=true;save.tut=1;knX=knY=0;persist();
-    document.body.classList.remove('tut','tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    document.body.classList.remove('tut','tutF','tutS','tutSlow','freeDone');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
     fireQ=false;kfire=false;this.scene.restart();
   }
   demoFinish(){ // 見本を終えて、本物のチュートリアルへ（シーンを始め直す）
@@ -1213,6 +1226,7 @@ class Main extends Phaser.Scene{
   /* --- ダメージ数値：当たった位置（世界座標）に出して、その場に固定。文字は画面に対して常に正立（カメラが回っても傾かない）・大きさも画面上で一定。盾が残っているボスへの軽減ダメージは小さく灰色 --- */
   dmgNum(x,y,v,weak){
     const n=Math.max(1,Math.round(v));if(n>(this.runMax||0))this.runMax=n; // この挑戦での最大ダメージ
+    if(this.free&&!this.freeDone){this.freeDmg+=n;if(this.freeDmg>=100){this.freeDone=true;document.body.classList.add('freeDone');}} // 自由に試すパート：与えたダメージの合計が100に達したら終了ボタンを出す
     let sz,col,stk,st={tier:-1,rb:false,shine:false};
     if(weak){sz=Math.round(DMG_SZ_MIN+(DMG_SZ_TOP-DMG_SZ_MIN)*Math.pow(Math.min(1,v/DMG_SZ_MAX),0.5));col='#c4cde2';stk='#161c2c';} // 盾・砲台が残っているボスへの軽減ダメージ：大きさは弱い方の白（通常と同じ曲線）、色だけ灰色
     else{
@@ -1285,7 +1299,7 @@ class Main extends Phaser.Scene{
     }else{
       const TY=['norm','chaser','eyes','beamer','clam'],POOL=TY.filter(t=>this.stage>=({eyes:3,beamer:6,clam:6}[t]||1)),N=pk?1:ENEMY_N(this.stage),list=[]; // 出る種類：目玉の敵はSTAGE3から、ロングビームの敵と貝はSTAGE6から
       for(let k=0;k<N;k++){ // 通常ステージは数体まとめて出る（種類はそれぞれランダム）
-        const type=TY.includes(pk)?pk:this.free?'norm':POOL[Math.floor(Math.random()*POOL.length)],mx=Math.max(20,Math.round((100+ENEMY_HP_SLOPE*(this.stage-1))*ENEMY_HP_K[N]*(type==='chaser'?0.75:1)));
+        const type=TY.includes(pk)?pk:this.free?'norm':POOL[Math.floor(Math.random()*POOL.length)],mx=this.free?1e9:Math.max(20,Math.round((100+ENEMY_HP_SLOPE*(this.stage-1))*ENEMY_HP_K[N]*(type==='chaser'?0.75:1))); // 自由に試すパートの敵は倒れない（ダメージ100で終了ボタンが出る）
         let sx=AR.sx,sy=AR.sy;
         if(N>1){const a=this.spawnA0+Math.PI*2*k/N,pt=arIn(AR.sx+Math.cos(a)*ER*2.2,AR.sy+Math.sin(a)*ER*2.2,ER);sx=pt.x;sy=pt.y;} // 重ならないよう、出現位置を輪にして散らす
         let e;
@@ -1526,7 +1540,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     const k=Math.min(N-1,Math.max(SPK_NMIN,SPK_N0-SPK_N1*(p0-1))),first=Math.floor(Math.random()*N)-Math.floor(k/2); // 範囲の区画数と、ランダムな開始位置
     for(let t=0;t<k;t++){
       const c=this.cells[((first+t)%N+N)%N];
-      if(c.p>0)c.p=Math.min(SPK_PMAX,c.p+p0); // 重なった区画：足し合わせる（同じ色が2つで次の色）
+      if(c.p>0)c.p+=p0; // 重なった区画：足し合わせる（同じ色が2つで次の色。上限なし）
       else c.p=p0;
       c.fl=1;
     }
@@ -1616,29 +1630,35 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(id==='hf')this.php=this.maxhp;
     else if(id[0]==='h')this.php=Math.min(this.maxhp,this.php+(id==='h2'?2:1));
     else if(id[0]==='m'){const n=id==='m3'?3:id==='m2'?2:1;this.maxhp+=n;this.php+=n;}
-    else if(id==='pu1'||id==='pu2'||id==='pu3')this.pullM=Math.min(PULL_MAX,this.pullM+0.15*(+id[2]));
-    else if(id==='sp1'||id==='sp2'||id==='sp3')this.spd=Math.min(SPD_MAX,this.spd+SPD_BASE*0.12*(+id[2]));
+    else if(id==='pu1'||id==='pu2'||id==='pu3')this.pullM+=0.15*(+id[2]); // 上限なし
+    else if(id==='sp1'||id==='sp2'||id==='sp3')this.spd+=SPD_BASE*0.12*(+id[2]); // 上限なし
     else if(id==='ru1'||id==='ru2'||id==='ru3')this.mv+=0.15*(+id[2]); // 上限なし
     else if(id==='bn1'||id==='bn2'||id==='bn3')this.rest+=0.05*(+id[2]); // 上限なし（敵の速さは1400で頭打ち・空気抵抗もあるので暴走はしない）
-    else if(id==='st1'||id==='st2')this.stuckT=Math.min(STUCK_MAX,this.stuckT+(id==='st2'?0.8:0.4));
+    else if(id==='st1'||id==='st2')this.stuckT+=(id==='st2'?0.8:0.4); // 上限なし
     else if(id[0]==='k')this.addSpike(2**(+id[1]));
     else if(id==='r1'||id==='r2'||id==='r3')this.rerolls+=+id[1];
-    else if(id==='sh1'||id==='sh2'||id==='sh4'||id==='sh6')this.shn=Math.min(PSH_MAX,this.shn+(+id.slice(2)));
+    else if(id==='sh1'||id==='sh2'||id==='sh4'||id==='sh6')this.shn+=+id.slice(2); // 上限なし
     else if(id==='rv')this.rev++;
     this.updHud();
   }
 
   /* --- 敵に触れた：シールドがあればダメージなし。敵にダメージを与えて吹き飛ばし、シールドが1枚（多角形の角が1つ）減る --- */
+  shCol(i){ // シールドi枚目(0始まり)の色：白→黄→橙→赤(4枚目)→ピンク→紫…と、赤の後は20枚で一周する速さで色相が回り続ける
+    if(i<=0)return 0xffffff;
+    const h=i<=3?60-30*(i-1):-(i-3)*18; // 赤(4枚目)の後は1枚ごとに色相18°＝20枚で一周
+    const hh=(((h%360)+360)%360)/60,f=hh-Math.floor(hh),ch=n=>{const k=(n+hh)%6;return Math.round(255*(1-Math.max(0,Math.min(k,4-k,1))));}; // HSV(s=1,v=1)→RGB
+    return(ch(5)<<16)|(ch(3)<<8)|ch(1);
+  }
   contactHit(q,e){
     if(this.shn<=0){this.hurt(q);return;}
     const p=q.p,cam=this.cameras.main;
-    this.shn--;this.shInv=0.5;
+    this.shn--;this.shInv=0.5;const sc0=this.shCol(this.shn); // 壊れた(一番外の)盾の色
     const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,v=PSH_KB/Math.sqrt(e.m||1);
     const armored=e.type==='boss'&&e.arms.some(a=>a.alive),prot=e.type==='clam'&&e.shell;
     if(!prot){const dm=armored?PSH_DMG*0.2:PSH_DMG;e.hp-=dm;this.dmgNum((p.x+e.x)/2,(p.y+e.y)/2,dm,armored);} // 盾つきボス・貝のシールドにはほとんど効かない
     e.vx=ux*v;e.vy=uy*v;e.w=rnd(-8,8);if(e.tele>0)e.tele=0;e.flash=1;
-    for(let i=0;i<18;i++){const a=rnd(0,6.283),sp=rnd(200,620);this.shards.push({x:p.x+Math.cos(a)*PSH_R*0.8,y:p.y+Math.sin(a)*PSH_R*0.8,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-20,20),t:0,c:Math.random()<0.5?0x66e0ff:0xffffff});}
-    this.imps.push({x:p.x,y:p.y,t:0,s:1.6,fill:1},{x:p.x,y:p.y,t:0,s:2.6,c:0x66e0ff},{x:p.x,y:p.y,t:0,s:4,c:0xcff6ff});
+    for(let i=0;i<18;i++){const a=rnd(0,6.283),sp=rnd(200,620);this.shards.push({x:p.x+Math.cos(a)*PSH_R*0.8,y:p.y+Math.sin(a)*PSH_R*0.8,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-20,20),t:0,c:Math.random()<0.5?sc0:0xffffff});}
+    this.imps.push({x:p.x,y:p.y,t:0,s:1.6,fill:1},{x:p.x,y:p.y,t:0,s:2.6,c:sc0},{x:p.x,y:p.y,t:0,s:4,c:0xffffff});
     this.hitE.explode(18,(p.x+e.x)/2,(p.y+e.y)/2);cam.shake(220,0.014);this.softFlash(100,150,230,255,0.3);this.freeze=Math.max(this.freeze,0.09);this.punch=Math.max(this.punch,0.12);
     sfx(2400,600,0.1,0.35,'square');sfx(180,60,0.25,0.4,'sawtooth');
     if(e.hp<=0){if(e.isPiece)this.breakPiece(e);else this.kill(e);}
@@ -1880,7 +1900,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       }
     }
     }
-    this.tangentPush(q,e);
+    if(!(e.type==='boss'&&e.sp>0))this.tangentPush(q,e);
     this.stepBody(e,q);
     if(e.dead)return;
     if(e.type==='boss'&&e.sp>0)e.w=0; // 盾の回転攻撃中、本体は回らない
@@ -1941,7 +1961,9 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(vr<PULLMAX*kk){const a=Math.min(PULLA*kk*STEP,PULLMAX*kk-vr)/(e.m||1)/(1+rc*rc/EIo);e.vx+=nx*a;e.vy+=ny*a;e.w=clamp(e.w+rc*a/EIo,-20,20);}
     }
     // 移動
-    const dm=Math.exp(-(e.tut&&!this.demo&&this.tp!=='pull'&&this.tp!=='move'?1.6:0.5)*STEP);e.vx*=dm;e.vy*=dm; // チュートリアルの敵は、引く間だけ実際のプレイと同じ減衰（それ以外は勢いがすぐ収まる）。見本は引いた後も実際のプレイと同じ減衰で、勢いを保ったまま壁へ飛ぶ
+    const spin=o.type==='boss'&&o.sp===2; // 盾の回転攻撃中：減衰なし・一定の速さ・きれいな反射
+    if(o.type==='boss'&&(o.sp===1||o.sp===3)){e.vx=e.vy=0;} // 盾を開く・閉じる間は、ボスは止まる
+    const dm=spin?1:Math.exp(-(e.tut&&!this.demo&&this.tp!=='pull'&&this.tp!=='move'?1.6:0.5)*STEP);e.vx*=dm;e.vy*=dm; // チュートリアルの敵は、引く間だけ実際のプレイと同じ減衰（それ以外は勢いがすぐ収まる）。見本は引いた後も実際のプレイと同じ減衰で、勢いを保ったまま壁へ飛ぶ
     const sp=Math.hypot(e.vx,e.vy);if(sp>1400){e.vx*=1400/sp;e.vy*=1400/sp;}
     e.x+=e.vx*STEP;e.y+=e.vy*STEP;
     e.a+=e.w*STEP;e.w*=Math.exp(-0.6*STEP);
@@ -1975,13 +1997,19 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const w=arPush(e.x,e.y,e.r);if(!w)break;
       e.x-=w.nx*w.pen;e.y-=w.ny*w.pen;
       const vn=e.vx*w.nx+e.vy*w.ny;
-      if(vn>0){
+      if(vn>0&&spin){ // 完全な鏡面反射（ブレ・減衰・回転なし）。ダメージ・コンボにはならず、画面だけ揺れる。当たるのは本体だけ（盾は壁をすり抜ける）
+        e.vx-=2*vn*w.nx;e.vy-=2*vn*w.ny;this.hitE.explode(6,e.x+w.nx*e.r,e.y+w.ny*e.r);this.cameras.main.shake(160,0.01);
+      }else if(vn>0){
         e.vx-=(1+this.rest)*vn*w.nx;e.vy-=(1+this.rest)*vn*w.ny;
         const jt=(Math.random()-0.5)*vn*0.35;e.vx+=-w.ny*jt;e.vy+=w.nx*jt;
         e.w=clamp(e.w+(Math.random()-0.5)*vn/e.r*0.9,-14,14);
         this.wallHit(e.x+w.nx*e.r,e.y+w.ny*e.r,vn,e,w);
         if(e.dead)return;
       }
+    }
+    if(spin){ // 速さは常に一定（他の力で変わっても戻す）。動き出す最初の1歩は、spHの向きで進む
+      const sp=Math.hypot(e.vx,e.vy);
+      if(sp>1e-3){e.vx*=SPN_V/sp;e.vy*=SPN_V/sp;e.spH=Math.atan2(e.vy,e.vx);}else{e.vx=Math.cos(e.spH||0)*SPN_V;e.vy=Math.sin(e.spH||0)*SPN_V;}
     }
   }
 
@@ -2049,18 +2077,19 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       e.next-=STEP;
       if(e.next<=0){
         e.next=armed?rnd(2.8,4.2):rnd(1.7,2.7);
-        if(armed)this.startSpin(e);else if(!st)e.tele=e.teleMax; // 盾がある間は、銛が刺さっていても回転攻撃（刺さっている銛は払われる）。盾が全部なくなったら、従来の突進
+        if(armed)this.startSpin(e,q);else if(!st)e.tele=e.teleMax; // 盾がある間は、銛が刺さっていても回転攻撃（刺さっている銛は払われる）。盾が全部なくなったら、従来の突進
       }
     }
   }
 
-  /* --- ボスの盾の回転攻撃：盾をバッと左右に開き（銛は払われ、盾には刺さらなくなる）、二枚で一本の棒になって本体を中心にゆっくり回りながら動く。この間は本体を狙える。本体に銛を打ち込むと割れて回転が止まり、元の構えに戻る（盾がある間、本体には刺さらない） --- */
-  startSpin(e){
+  /* --- ボスの盾の回転攻撃：盾をバッと開いて本体を両側から挟む向きにし（銛は払われ、盾には刺さらなくなる。開く間・閉じる間はボスは止まる）、本体に付けたまま回りながら、一定の速さでまっすぐ進み、壁で反射して跳ね回る（壁に当たるのは本体だけ。当たると画面が揺れる）。10秒たつか、本体に銛を打ち込むと（割れて）回転が止まり、元の構えに戻る（盾がある間、本体には刺さらない） --- */
+  startSpin(e,q){
     e.sp=1;e.spT=0;e.spK=0;e.spA=0;e.spN=0;e.tele=0;
+    e.vx=e.vy=0; // 盾を開く間は止まる（動き出すのは開き終わってから）
     const h=this.h,cam=this.cameras.main;
     if(h&&h.st==='stuck'&&h.tg===e){ // 刺さっていた銛は払われる
       const T=this.tail();
-      h.ang=h.rel+e.a;h.dvx=-h.ux*this.spd*0.25;h.dvy=-h.uy*this.spd*0.25;h.dw=rnd(-5,5);h.trail.length=0;
+      h.ang=h.rel+e.a;{const sv=Math.min(this.spd,SPD_SAFE);h.dvx=-h.ux*sv*0.25;h.dvy=-h.uy*sv*0.25;}h.dw=rnd(-5,5);h.trail.length=0;
       this.jerkT=0;this.reeling=false;h.st='drift';h.tg=null;
       this.hitE.explode(14,T.x,T.y);
     }
@@ -2070,12 +2099,9 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   spinStep(e,q){
     if(e.sp===1){ // 盾をバッと開く
       e.spT+=STEP;const t=Math.min(1,e.spT/SPN_OPEN);e.spK=1-Math.pow(1-t,3);
-      if(t>=1){e.sp=2;e.spT=0;e.spK=1;}
+      if(t>=1){e.sp=2;e.spT=0;e.spK=1;const aim=this.aimDir(q,e);e.spH=Math.atan2(aim.dy,aim.dx);} // 開き終わったら、自機の方へ向けて、一定の速さで出発（このあとは壁で反射するだけで、向きも速さも自分では変えない）
     }else if(e.sp===2){ // 回転しながら、ランダムな方向へゆっくり移動
-      e.spT+=STEP;e.spA+=SPN_W*(e.arms.filter(a=>a.alive).length===1?SPN_ONE:1)*STEP;e.spN-=STEP; // 盾が残り1枚なら回転が速い
-      
-      {const aim=this.aimDir(q,e);e.spvx=aim.dx/aim.d*SPN_V;e.spvy=aim.dy/aim.d*SPN_V;} // ランダムではなく、常に自機の方へ向かって動く
-      const k=Math.min(1,2*STEP);e.vx+=((e.spvx||0)-e.vx)*k;e.vy+=((e.spvy||0)-e.vy)*k;
+      e.spT+=STEP;e.spA+=SPN_W*(e.arms.filter(a=>a.alive).length===1?SPN_ONE:1)*STEP;e.spN-=STEP; // 盾が残り1枚なら回転が速い（移動はstepBodyの中：一定の速さでまっすぐ進み、壁で反射する）
       if(e.spT>=SPN_MAX)this.spinEnd(e);
     }else{ // 回転が止まって、すっと元の構えに戻る
       e.spT+=STEP;const t=Math.min(1,e.spT/SPN_CLOSE),u=t*t*(3-2*t);
@@ -2160,7 +2186,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   }
   deflect(tx,ty,pm,wallSnd){ // ボス本体は盾が残っている間、銛を弾く（pm＝キーン音の音程の倍率。wallSnd＝trueなら、音は壁で2回目に跳ね返る時の音と同じ。貝のシールドが使う）
     const h=this.h;
-    h.dvx=-h.ux*this.spd*0.2;h.dvy=-h.uy*this.spd*0.2;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);
+    {const sv=Math.min(this.spd,SPD_SAFE);h.dvx=-h.ux*sv*0.2;h.dvy=-h.uy*sv*0.2;}h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);
     h.st='drift';h.trail.length=0;
     this.hitE.explode(12,tx,ty);this.cameras.main.shake(90,0.005);
     if(wallSnd)pingSfx(0.12,1.5,0.35); // 壁に当たったあと、漂う銛が2回目に跳ね返る音と同じ設定（小さくて軽い金属音）
@@ -2380,10 +2406,12 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       n.px=n.x;n.py=n.y;n.x+=vx;n.y+=vy;
     }
     r[0].x=r[0].px=pvx;r[0].y=r[0].py=pvy;
-    if(h.st==='fly'){
-      b.x+=h.ux*this.spd*STEP;b.y+=h.uy*this.spd*STEP;
+    if(h.st==='fly'){ // 飛ぶ銛：1ステップの移動がFLY_LIMを超える速さの時だけ、FLY_SUB以下ずつ刻んで毎回当たりを調べる（遅い間は従来どおり1回）
+      const tot=this.spd*STEP,ns=tot>FLY_LIM?Math.min(400,Math.ceil(tot/FLY_SUB)):1,sd=tot/ns;
+      for(let si=0;si<ns&&h.st==='fly';si++){
+      b.x+=h.ux*sd;b.y+=h.uy*sd;
       const tx=b.x+h.ux*LEN,ty=b.y+h.uy*LEN;
-      h.trail.push({x:tx,y:ty});if(h.trail.length>10)h.trail.shift();
+      if(si===ns-1||si%3===0){h.trail.push({x:tx,y:ty});if(h.trail.length>10)h.trail.shift();}
       const c0=Math.hypot(b.x-pvx,b.y-pvy);
       if(c0>this.ropeLen)this.ropeLen=Math.min(c0,RMAX); // 紐は最大の長さまで伸びる
       if(this.probe(tx,ty)){/* 刺さった／弾かれた */}
@@ -2391,7 +2419,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         const w=arPush(tx,ty,0),un=h.ux*w.nx+h.uy*w.ny,m=un>0.05?w.pen/un:0;
         b.x-=h.ux*m;b.y-=h.uy*m;b.px=b.x;b.py=b.y;
         // 刺さらず、小さく跳ね返って漂い始める
-        let vx=h.ux*this.spd,vy=h.uy*this.spd;
+        const svf=Math.min(this.spd,SPD_SAFE);let vx=h.ux*svf,vy=h.uy*svf;
         const vn=vx*w.nx+vy*w.ny,vtx=vx-vn*w.nx,vty=vy-vn*w.ny;
         vx=-vn*w.nx*DRIFT_BOUNCE+vtx*DRIFT_BOUNCE*1.4;vy=-vn*w.ny*DRIFT_BOUNCE+vty*DRIFT_BOUNCE*1.4;
         h.dvx=vx;h.dvy=vy;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-2.2,2.2);
@@ -2402,6 +2430,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       else if(c0>=RMAX){ // 紐が最大の長さまで伸びきった：何にも当たらなかったので、その場でふわっと漂い始める（押すと引き戻す）
         h.dvx=h.dvy=0;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-2.2,2.2);h.st='drift';h.trail.length=0;
         this.hitE.explode(6,tx,ty);sfx(700,300,0.08,0.18,'triangle');
+      }
       }
     }
     if(h.st==='drift'){ // 壁際をゆっくり漂う
@@ -2723,13 +2752,15 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     g.restore();
     for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'rope'); // 紐：本体より上、発射台（銃身）より下
     this.drawHarp(g,q,h,this.rope,true,undefined,'rope');
-    if(this.shn>0){ // シールド：自機を覆って回る多角形（1枚=三角形、2枚=四角形…）
-      const N=this.shn+2,cx=q.p.x+Math.cos(q.phi)*8,cy=q.p.y+Math.sin(q.phi)*8,pts=[];
-      for(let k=0;k<N;k++){const a=this.shA+k*Math.PI*2/N;pts.push({x:cx+Math.cos(a)*PSH_R,y:cy+Math.sin(a)*PSH_R});}
-      g.fillStyle(0x66e0ff,0.12);g.fillPoints(pts,true);
-      g.lineStyle(8,0x66e0ff,0.22);g.strokePoints(pts,true);
-      g.lineStyle(3,0xcff6ff,0.95);g.strokePoints(pts,true);
-      g.fillStyle(0xffffff,0.95);for(const v of pts)g.fillCircle(v.x,v.y,3.2);
+    if(this.shn>0){ // シールド：自機を覆って回る正方形。1枚目が本体を覆い、2枚目以降は同じ角度でほんの少し外側に重なる。色は枚数ごとに変わる
+      const cx=q.p.x+Math.cos(q.phi)*8,cy=q.p.y+Math.sin(q.phi)*8;
+      for(let i=this.shn-1;i>=0;i--){ // 外側から先に描く
+        const R=PSH_R+PSH_STEP*i,col=this.shCol(i),pts=[];
+        for(let k=0;k<4;k++){const a=this.shA+Math.PI/4+k*Math.PI/2;pts.push({x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R});}
+        g.fillStyle(col,0.1);g.fillPoints(pts,true);
+        g.lineStyle(8,col,0.22);g.strokePoints(pts,true);
+        g.lineStyle(3,col,0.95);g.strokePoints(pts,true);
+      }
     }
     // 銛の発射台（敵を向く）＋装填中の銛
     g.save();g.translateCanvas(q.pvx,q.pvy);g.rotateCanvas(q.psi);
