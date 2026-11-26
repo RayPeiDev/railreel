@@ -77,6 +77,17 @@ body:not(.play) #hud,body:not(.play) #stk,body:not(.play) #fb{display:none}
 #tutSkip{display:none;position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(20,28,48,.7);color:#fff;font:600 13px/1 Rajdhani,system-ui,sans-serif} /* チュートリアルを丸ごと飛ばすボタン（左上）。見本と実践の間ずっと出る */
 body.play.tut #tutSkip,body.play.free #tutSkip{display:block}
 body.free #hp{display:none} /* 自由に試すパート：ライフの概念がないのでハートは出さない */
+#pauseDim{display:none;position:fixed;inset:0;background:rgba(5,8,16,.7);color:#fff;font:700 34px/1 Rajdhani,system-ui,sans-serif;letter-spacing:8px;text-shadow:0 2px 8px rgba(0,0,0,.7);flex-direction:column;align-items:center;justify-content:center;gap:26px}
+#pauseRow{display:flex;gap:24px}
+.pbtn{width:64px;height:64px;padding:0;border-radius:16px;border:0;background:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .09s ease-out}
+#pauseBtn.dn,.pbtn.dn{transform:scale(.88)} /* 押している間、少し小さくなる */
+.pbtn svg{width:30px;height:30px;pointer-events:none}
+#pauseResume svg,#pauseEnd svg{fill:#fff}
+#pauseBtn{display:none;position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;padding:0;border-radius:11px;border:0;background:#6b7280;cursor:pointer;align-items:center;justify-content:center;transition:transform .09s ease-out}
+#pauseBtn svg{width:20px;height:20px;fill:#fff;pointer-events:none}
+body.play:not(.tut):not(.free):not(.paused) #pauseBtn{display:flex}
+body.paused #pauseDim{display:flex}
+body.test #pauseBtn{right:96px} /* テストモードはSkipボタンが右上にあるので、その左に */
 body.test.play #skip{display:block} /* テストモード中のプレイ画面だけ表示 */
 #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:20;color:#fff;font-family:Rajdhani,system-ui,sans-serif;
   background:radial-gradient(ellipse at 50% 38%,#1c2750 0%,#0b1020 55%,#070a12 100%)}
@@ -144,6 +155,7 @@ body.test.play #skip{display:block} /* テストモード中のプレイ画面�
 <div id="stk"><div id="kn"></div></div>
 <div id="fb">FIRE</div>
 <button id="skip" type="button">Skip ▶▶</button><button id="tutSkip" type="button">Skip ▶▶</button>
+<div id="pauseDim">PAUSED<div id="pauseRow"><button id="pauseResume" class="pbtn" type="button" aria-label="Resume"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button><button id="pauseEnd" class="pbtn" type="button" aria-label="End run"><svg viewBox="0 0 24 24"><rect x="4.8" y="3.5" width="2.4" height="17.5" rx="1.2"/><path d="M7 4.6h11.6l-3.1 4.4 3.1 4.4H7z"/></svg></button></div></div><button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg></button>
 <div id="over"><canvas id="pile"></canvas>
   <div id="ovc"><div id="ovNew">NEW RECORD!</div><b id="ovb"></b><span id="ovs"></span><div id="tap">Tap to retry</div><button id="homeBtn" class="pill" type="button">Home</button></div><div id="ovCoin" class="coinBox"><i class="cn"></i><span id="ovCoinN">0</span></div><div id="ovGain"></div></div>
 <div id="set"><div id="setTop"><button id="setBack" class="pill" type="button">Back</button><div id="setT">Settings</div></div><div id="setList"><div class="srow"><span>Sound FX</span><button id="sfxSw" class="sw" type="button" role="switch" aria-checked="true" aria-label="Sound FX"><i></i></button></div><div class="srow"><span>How to play</span><button id="tutRe" class="pill" type="button">Watch again</button></div></div></div>
@@ -585,6 +597,7 @@ function inStickZone(e){
   return document.body.classList.contains('play')&&e.clientX<innerWidth*STICK_ZONE_X&&e.clientY>innerHeight*STICK_ZONE_Y&&!e.target.closest('#over,#pick,#home,button');
 }
 document.addEventListener('pointerdown',e=>{
+  if(paused)return; // 一時停止中は、撃つ・スティックの判定をしない
   if(e.target.closest&&e.target.closest('#upg'))return; // 強化の選択中は、撃つ・スティックの判定をしない
   const f=ctr(fb);
   if(fireId===null&&Math.hypot(e.clientX-f.x,e.clientY-f.y)<f.r*1.3){
@@ -603,7 +616,8 @@ document.addEventListener('pointerup',endP);document.addEventListener('pointerca
 const keys={};
 addEventListener('keydown',e=>{
   keys[e.key.toLowerCase()]=1;
-  if(e.key===' '&&!e.repeat){kfire=true;fireQ=true;}
+  if(e.key===' '&&!e.repeat&&!paused){kfire=true;fireQ=true;}
+  if((e.key==='p'||e.key==='P'||e.key==='Escape')&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey)setPaused(!paused); // P／Escキーでも一時停止
   if((e.key==='r'||e.key==='R')&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){ // Rキー：強化を選んでいる間はリロード／それ以外はテストモードのみステージスキップ（右上のボタンと同じ）
     const sc=game.scene.scenes[0];
     if(sc&&sc.pickOn){if(sc.rerollUpg)sc.rerollUpg();}
@@ -672,14 +686,35 @@ async function stSend(){
 setInterval(()=>{ // 1秒ごと：プレイ中（結果画面・ホーム・裏タブは除く）なら1秒足す。30秒たまるか、プレイが止まったら送る。接続は、プレイ画面にいる間だけ保つ
   if(!stOn())return;
   const play=screen==='play'&&!document.hidden;
-  const live=play&&overEl.style.display!=='flex';
+  const live=play&&overEl.style.display!=='flex'&&!paused;
   if(live)ST.sec++;
   if(ST.sec>=30||(!live&&(ST.sec||ST.plays)))stSend();
   if(play!==ST.up&&!ST.busy)stLink(play); // 送信が終わってから切る
 },1000);
 let tutLast='',demoDone=false; // demoDone＝見本（チュートリアルを自動で通して見せる）を見せ終えた（ページを開いている間）
 let screen='home',ovAt=0;
-function setScreen(s){screen=s;document.body.classList.toggle('play',s==='play');homeEl.style.display=s==='home'?'flex':'none';}
+let paused=false; // 一時停止中（右上のボタン／Pキー／Escキー／タブを離れた時）
+const pauseBtn=document.getElementById('pauseBtn');
+function setPaused(v){
+  v=!!v;if(v===paused)return;
+  const sc=game.scene.scenes[0];
+  if(v&&(screen!=='play'||!sc||sc.over||sc.pickOn||sc.tutOn||sc.free))return; // 止められるのは、通常のプレイ中だけ
+  paused=v;
+  if(v){ // 押しっぱなしの操作は離したことにする（再開した瞬間に撃ったり動いたりしない）
+    fireId=null;stickId=null;sx=sy=0;knX=knY=0;fireQ=false;kfire=false;stk.style.left=stk.style.top=stk.style.bottom='';
+  }
+  if(sc){if(sc.time)sc.time.paused=v;if(sc.tweens){if(v)sc.tweens.pauseAll();else sc.tweens.resumeAll();}}
+  document.body.classList.toggle('paused',v);
+}
+[pauseBtn,document.getElementById('pauseResume'),document.getElementById('pauseEnd')].forEach(b=>{ // 押している間だけ縮む（:activeはタッチで効かないことがあるのでクラスで）
+  b.addEventListener('pointerdown',()=>b.classList.add('dn'));
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,()=>b.classList.remove('dn')));
+});
+pauseBtn.addEventListener('pointerup',e=>{e.stopPropagation();setPaused(true);});
+document.getElementById('pauseResume').addEventListener('pointerup',e=>{e.stopPropagation();setPaused(false);});
+document.getElementById('pauseEnd').addEventListener('pointerup',e=>{e.stopPropagation();const sc=game.scene.scenes[0];setPaused(false);if(sc&&sc.endRun)sc.endRun();}); // 終了：再開してから、その場で自機を爆発させて結果画面へ
+document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
+function setScreen(s){if(paused)setPaused(false);screen=s;document.body.classList.toggle('play',s==='play');homeEl.style.display=s==='home'?'flex':'none';}
 setScreen('home');
 if(!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL)){statPlay();setScreen('play');} // 初めての人は、ホームを飛ばしてチュートリアルから始まる
 function toast(t){toastEl.textContent=t;toastEl.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>toastEl.classList.remove('on'),1400);}
@@ -1044,11 +1079,12 @@ function startPile(log){
 /* ===== シーン ===== */
 class Main extends Phaser.Scene{
   create(){
+    paused=false;document.body.classList.remove('paused');this.time.paused=false;this.tweens.resumeAll();
     this.tutOn=!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL); // チュートリアル中（初めて・テストの敵指定なし）
     setShape(this.tutOn?'line':shapeFor(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1),this.scale.width,this.scale.height);
     this.s=RAIL.s0;this.vel=0;this.acc=0;this.freeze=0;this.punch=0;this.ts=1;this.slowT=0;this.slowLen=0;this.slowCD=0;this.recoil=0;this.cool=0;this.hcool=0;
     this.h=null;this.ex=[];this.ld=[0,0,0];this.rope=null;this.ropeLen=0;this.holdT=0;this.reeling=false;this.taut=false;this.lbl='';
-    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.stage=this.tutOn?0:/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1;this.kills=0;this.runMax=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
+    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1;this.kills=0;this.runMax=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
     this.es=[];(this.dmgT||[]).forEach(t=>t.destroy());this.dmgT=[];this.combo=0;this.comboT=0;this.wallF=0;this.imps=[];this.shards=[];this.fwk=[];this.fwf=[];this.chunks=[];this.resT=0;this.msgT=0;this.yankC=0;
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
     this.rerolls=1;this.mv=1;this.rest=REST;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
@@ -1625,11 +1661,23 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     sfx(140,40,0.45,0.5,'sawtooth');
     this.updHud();
     if(this.php<=0&&this.rev>0){this.rev--;this.php=this.maxhp;this.inv=2.5;this.msg('REVIVED!');this.softFlash(300,255,255,255,0.35);this.updHud();return;} // 復活：HP満タンで、少しのあいだ無敵
-    if(this.php<=0){
+    if(this.php<=0)this.finish();
+  }
+  finish(){ // ゲームオーバー（やられた時／一時停止メニューの「終了」）：結果を確定して、倒された瞬間の画面をしばらく見せてから結果画面を出す
       this.over=true;const gain=coinsFor(this.stage),isNew=this.stage>save.best;if(isNew)save.best=this.stage;const rm=this.runMax||0,isNewD=rm>save.maxDmg;if(isNewD)save.maxDmg=rm;save.coins+=gain;persist();document.getElementById('ovNew').style.display=isNew?'block':'none';updCoin();lastGain=gain;document.getElementById('ovCoinN').textContent=save.coins-gain;ovGainEl.classList.remove('show');
       document.getElementById('ovb').textContent='STAGE '+this.stage;ovs.innerHTML='Kills '+this.kills+' / Coins +'+gain+'<br>Max damage '+rm+(isNewD?' <em>NEW!</em>':' (Best: '+save.maxDmg+')');
       ovAt=performance.now()+DEATH_WAIT*1000;setTimeout(()=>{overEl.style.display='flex';ovAt=performance.now();startPile(this.log);},DEATH_WAIT*1000); // 倒された瞬間の画面をしばらく見せてから、結果画面を出す
-    }
+  }
+  endRun(){ // 一時停止メニューの「終了」：その場で自機が爆発（音は爆弾の砲台と同じ boom）して、結果画面へ
+    if(this.over||this.free||this.tutOn)return;
+    const p=this.gp().p,cam=this.cameras.main;
+    this.php=0;this.rev=0;this.gone=true;this.combo=0;this.comboT=0;comboEl.style.opacity=0;
+    for(let i=0;i<6;i++)this.hitE.explode(50,p.x+rnd(-34,34),p.y+rnd(-34,34)); // 火花を大量に
+    this.imps.push({x:p.x,y:p.y,t:0,s:1.6,fill:1},{x:p.x,y:p.y,t:0,s:2.8,c:0xffb347},{x:p.x,y:p.y,t:0,s:4,c:0xff5e7a}); // 大きな衝撃リング
+    cam.shake(500,0.035);cam.flash(220,255,190,110);this.punch=0.25;
+    if(!playSnd('boom',1)){sfx(100,25,0.5,0.7,'sawtooth');sfx(900,100,0.3,0.4,'square');sfx(2400,300,0.15,0.25,'triangle');} // 爆弾の爆発音：boom（読み込み前だけ合成音）
+    this.updHud();
+    this.finish();
   }
 
   /* --- 目玉の敵：ゆっくり漂い、体全体が一つの目として光線を撃つ（光線は壁で跳ね返る） --- */
@@ -2654,6 +2702,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
       }
       if(pc.flash>0.02){g.fillStyle(0xffffff,0.7*pc.flash);g.fillCircle(pc.x,pc.y,pc.r*0.8);}
     }
+    if(this.gone)return; // 「終了」で爆発した後は、自機（照準線・銛・本体・砲身・シールド）を描かない
     // 照準線
     if(e&&!h){
       const ux=Math.cos(q.psi),uy=Math.sin(q.psi),dist=Math.hypot(e.x-q.pvx,e.y-q.pvy);
@@ -2692,7 +2741,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
   }
 
   update(time,delta){
-    if(screen!=='play'||this.pickOn)return; // ホーム画面・強化を選んでいる間はゲームを止めておく
+    if(screen!=='play'||this.pickOn||paused)return; // ホーム画面・強化を選んでいる間・一時停止中はゲームを止めておく
     const dr=Math.min(delta,50)/1000;
     this.punch*=Math.exp(-12*dr);this.wallF*=Math.exp(-9*dr);
     for(const x of this.es)x.flash*=Math.exp(-12*dr);
