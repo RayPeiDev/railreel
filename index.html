@@ -309,6 +309,8 @@ const LMIN=12; // 刺さった銛が縮められる最短の長さ（敵を引�
 let LEN=72;const LEN0=72,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
 const TURN_K=36; // 切り返し時の速度の追従の速さ（通常は14。大きいほど素早く反転する）
 const SPEED=330;          // 自機のレール上の速さ
+const DG_DIST=170,DG_SPD=1100,DG_REC=5,DG_AFT=0.3,DG_POP=0.3,DG_ROW=6; // Dodge（回避）：ダッシュの距離(px)／ダッシュの速さ(px/秒。距離÷速さ＝ダッシュの長さで、この間は当たらない)／スタミナ1つが回復するまで(秒)／残像が消えるまで(秒)／回復の瞬間の光る時間(秒)／スタミナの四角を1段に並べる数
+const DG_FLICK=0.75,DG_WIN=250,DG_DBL=260; // Dodgeの発動：スマホ＝指を置いてからDG_WINミリ秒以内に、スティックをDG_FLICK（0〜1。1＝全開）以上倒す／PC＝同じ移動キーをDG_DBLミリ秒以内に2回押す
 const RMAX=1000,NSEG=24;   // ロープの最大長・分割数
 const HOLD=0.28;          // 長押し判定秒（巻き取り開始）
 const PULLA=7500,PULLMAX=1000; // 巻き取りで敵を引く加速度・最高速
@@ -324,13 +326,16 @@ const DRIFT_DAMP=0.9;     // 漂う銛の減速（大きいほどすぐ止まる
 const DRIFT_WOBBLE=70;    // 漂う銛のふらつき
 const LASER_KB=1500; // レーザーで刺された敵が吹き飛ぶ速さの基準（爆弾のBOMB_KBより少し強め。重い敵ほど控えめ）
 const KB_V=320;         // 銛が刺さった時に敵が押される速さ（px/秒）
-const EPAL={norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a},gboss:{n:10,c1:0x9aa3b2,c0:0x1d2028,c2:0xc9d0dc}}; // 敵の種類ごとの見た目（トゲの数・色）
+const EPAL={prism:{n:6,c1:0x57c8ff,c0:0x0b2a40,c2:0x9fe4ff},norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a},gboss:{n:10,c1:0x9aa3b2,c0:0x1d2028,c2:0xc9d0dc},iboss:{n:10,c1:0x8a94a0,c0:0x3a4048,c2:0xd5dce4},iceboss:{n:10,c1:0xf2f8ff,c0:0xc3cfdc,c2:0xffffff}}; // 敵の種類ごとの見た目（トゲの数・色）
 const SHAPES=['line','square','circle','tri']; // ステージ5つごとに、この順で変わる（直線→四角形→円→三角形→直線…）
-const BOSS_AT={5:'boss',10:'eboss',15:'gboss'};
+const BOSS_AT={5:'boss',10:'eboss',15:'gboss',20:'pboss',25:'iboss',30:'iceboss'};
+const ICE_ORB=95,ICE_TIP=26,ICE_CHG=1.1,ICE_FIRE=3.2,ICE_ROT=0.25,ICE_W=36,ICE_WAIT=[1.8,2.8],ICE_FAR=2600,ICE_BRK=110,ICE_MINLEN=100,ICE_LIFE=10,ICE_REV=15,ICE_FADE=0.7; // 氷のボス：ICE_ORB＝結晶が浮かぶ距離の目安／ICE_TIP＝雪の結晶の腕の長さ／ICE_CHG＝ビームの溜め（予告線）の秒数／ICE_FIRE＝ビームが出ている秒数／ICE_ROT＝ビームの回る速さ(rad/秒)／ICE_W＝ビームの太さ／ICE_WAIT＝次の攻撃までの間隔の範囲／ICE_FAR＝ビームの長さ（壁を突き抜けて画面の外まで）
+const IB_N=4,IB_GAP=0.55,IB_FORM=0.35,IB_SHAKE=0.9,IB_WAIT=[2.8,3.8],IB_ACC=3200,IB_VMAX=1700,IB_HB=[60,76]; // 鉄のボス：IB_N＝1回に作る塊の数／IB_GAP＝塊を作る間隔(秒)／IB_FORM＝作られる時間／IB_SHAKE＝振動して予告する時間／IB_WAIT＝次の攻撃までの間隔の範囲／IB_ACC・IB_VMAX＝落ちる加速と最高速／IB_HB＝塊の一辺の半分の大きさの範囲
+const PB_N=6,PB_GAP=0.32,PB_WAIT=2.6,PB_CHG=0.14,PB_SPD=700,PB_EMIT=0.1,PB_IN=3600,PB_REF=10,PB_R=78,PB_ROT=0.35,PB_ORB=175,PB_COL=0x7fe3ff,PB_HIT=0xdaf6ff; // プリズムのボス：1回に撃つ光線の数／光線どうしの間隔(秒)／撃ち終わってから次までの待ち(秒)／溜め(秒)／光線の速さ／出続ける時間(秒)／プリズムの中を進む速さ／プリズム内の反射回数／プリズムの大きさ(外接円の半径)／プリズムの回る速さ(rad/秒)／本体がプリズムのまわりを回る半径／光線の色・当たった点の色
 const BOSS_HP_SLOPE=15; // ボスのHPのステージごとの伸び（雑魚はENEMY_HP_SLOPE）。HP＝(100＋伸び×(ステージ−1))×1.4
 const GL_MAX=6,GL_SW=0.8,GL_KR=20,GL_KHP=10,GL_KNX=[3.5,6]; // GL_KNX＝小さい敵が次に動く（突進する）までの間隔(秒)の範囲。大きくするほど突進が減る
 // // ガラスのボス：小さい敵が同時にいられる数／玉が膨らんで分離するまでの時間(秒)／小さい敵の半径／小さい敵のHP
-const startStage=()=>({boss:5,eboss:10,gboss:15}[testPick])||(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1); // 開始ステージ：テストの選択画面でボスを選んだ時は、そのボスが出るステージから始まる（盾5・ビーム10・ガラス15）。URLの?boss ?ebossも同じ
+const startStage=()=>({boss:5,eboss:10,gboss:15,pboss:20,iboss:25,iceboss:30}[testPick])||(/[?&]eboss/.test(TEST_URL)?10:/[?&]boss/.test(TEST_URL)?5:1); // 開始ステージ：テストの選択画面でボスを選んだ時は、そのボスが出るステージから始まる（盾5・ビーム10・ガラス15）。URLの?boss ?ebossも同じ
 const bossFor=st=>BOSS_AT[st]||(st%10===0?'eboss':st%5===0?'boss':null);
 const TEST_MODE=(()=>{try{const v=localStorage.getItem('railreel.test');return v==='1';}catch(e){return false;}})(); // ★テストモード：true＝テスト用の機能を有効（敵・形状の選択画面／URLの?boss ?eboss ?shape=／右上のステージスキップボタン）。false＝通常プレイ（すべて無効）。何も保存されていない時はfalse＝通常モード
 if(TEST_MODE)document.body.classList.add('test');
@@ -346,6 +351,7 @@ const TUT_MIN=0.03,TUT_KB=190,TUT_PULL_K=1,TUT_DRAG=2600,TUT_PULLS=2,TUT_RUN_T=1
 const TUT_TURN_T=2,TUT_GOAL_T=4; // 実践の始まり：最初に「Your turn!」を見せる時間(秒)／そのあと「Goal: …」を見せる時間(秒)。この合計の間は、まだ撃てない（読む時間）
 const DEMO_WAIT=0.9,DEMO_PULLS=[0.35,0.47],DEMO_RUN_AT=0.5,DEMO_RUN_T=0.5,DEMO_MAX=30,DEMO_PULL_K=1; // 見本の台本（銛が刺さってからの秒数）：引くボタンを押す時刻（0.12秒おきの連打）／横へ避け始める時刻／避けて動く長さ(秒)。毎回同じ動きにするための固定値で、避けるのが早すぎ・遅すぎる時はDEMO_RUN_ATを、勢いはDEMO_PULL_Kを調整／万一止まっても、この秒数で本物のチュートリアルへ進む／引く力の倍率（1＝本編と同じ）
 const TUT_TOUCH=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+const SLOW_PRED=true; // true：自機が今の入力を押し続けた場合の動きを予測して「当たりそうか」を判定／false：自機は今の位置のまま判定（従来）
 const SLOW_AHEAD=0.25,SLOW_V=0.35,SLOW_MAX=1.0,SLOW_CD=1.5; // スローモーション：光線が自機に当たりそうな（この秒数以内に当たる）とき、時間の進みがSLOW_V倍になる。最長SLOW_MAX秒で、終わったらSLOW_CD秒は再発動しない
 const EYE_BV=520,EYE_BN=4,EYE_LEN=160; // 光線の速さ(px/秒)・壁で跳ね返れる回数・光線の長さ(px)
 const TURR=21,TUR_X=54,TUR_Y=23,EB_FIRE=6-EYE_CHG; // 新ボス：砲台の半径・本体からの位置（左右×上下）・砲台1基が撃つ周期＝6秒（左右2基で全体3秒ごと。待ち時間は溜め0.55秒を引いた分）
@@ -356,6 +362,34 @@ const SQ3=Math.sqrt(3);
 // 盾の一枚（side=±1）の中心線：正三角形の辺を、外側へ板の半分の太さだけずらした位置（板の内側の面が辺に乗る）
 // 板（長方形）の四隅。短い辺も含めて輪郭を描くために使う
 function plateQuad(sx,sy,hx,hy,hw){const dx=hx-sx,dy=hy-sy,l=Math.hypot(dx,dy)||1,nx=-dy/l*hw,ny=dx/l*hw;return[{x:sx+nx,y:sy+ny},{x:hx+nx,y:hy+ny},{x:hx-nx,y:hy-ny},{x:sx-nx,y:sy-ny}];}
+function prismTri(pz){const v=[];for(let k=0;k<3;k++){const a=pz.rot+k*Math.PI*2/3;v.push({x:pz.cx+Math.cos(a)*pz.R,y:pz.cy+Math.sin(a)*pz.R});}return v;} // プリズム（正三角形）の3つの角
+function prismN(v,k,pz){const a=v[k],b=v[(k+1)%3],ex=b.x-a.x,ey=b.y-a.y,l=Math.hypot(ex,ey)||1;let nx=ey/l,ny=-ex/l;if(nx*(a.x-pz.cx)+ny*(a.y-pz.cy)<0){nx=-nx;ny=-ny;}return{nx,ny};} // 辺kの外向きの法線
+function prismEnter(x,y,dx,dy,t,pz){ // 点(x,y)から単位ベクトル(dx,dy)の向きに距離tまで進むとき、外からプリズムの辺に入る点（なければnull）
+  const v=prismTri(pz);let best=null;
+  for(let k=0;k<3;k++){
+    const a=v[k],b=v[(k+1)%3],ex=b.x-a.x,ey=b.y-a.y,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)continue;
+    const sx=((a.x-x)*ey-(a.y-y)*ex)/den,u=((a.x-x)*dy-(a.y-y)*dx)/den;
+    if(sx<=1e-6||sx>t||u<0||u>1)continue;
+    const n=prismN(v,k,pz);if(dx*n.nx+dy*n.ny>=0)continue; // 入る向きの辺だけ
+    if(!best||sx<best.s)best={s:sx,x:x+dx*sx,y:y+dy*sx};
+  }
+  return best;
+}
+function prismPath(ex,ey,ang,pz,nref){ // プリズムの中の道すじ：入った点から、辺で nref 回反射して、最後の辺から出る。{pts:反射点…最後は出口, dx,dy:出る向き}
+  const v=prismTri(pz);let x=ex,y=ey,dx=Math.cos(ang),dy=Math.sin(ang);const pts=[];
+  for(let it=0;it<=nref;it++){
+    let best=null;
+    for(let k=0;k<3;k++){
+      const a=v[k],b=v[(k+1)%3],qx=b.x-a.x,qy=b.y-a.y,den=dx*qy-dy*qx;if(Math.abs(den)<1e-9)continue;
+      const sx=((a.x-x)*qy-(a.y-y)*qx)/den,u=((a.x-x)*dy-(a.y-y)*dx)/den;
+      if(sx>1e-3&&u>=0&&u<=1&&(!best||sx<best.s))best={s:sx,k};
+    }
+    if(!best)break;
+    x+=dx*best.s;y+=dy*best.s;pts.push({x,y});
+    if(it<nref){const n=prismN(v,best.k,pz),dn=dx*n.nx+dy*n.ny;dx-=2*dn*n.nx;dy-=2*dn*n.ny;}
+  }
+  return{pts,dx,dy};
+}
 function shieldPts(r,side){const ox=SH_R/2,oy=side*SQ3/2*SH_R;return{sx:2*r+ox,sy:oy,hx:-r+ox,hy:side*SQ3*r+oy};}
 function shieldPtsR(r,side,rot){ // 盾を本体の中心まわりにrotだけ回した位置（片方がちぎれた後、残りが正面へ回る）
   const p=shieldPts(r,side);if(!rot)return p;const c=Math.cos(rot),s=Math.sin(rot);
@@ -423,15 +457,93 @@ const polySplit=(r,d)=>{ // 紐の線を、始点から距離dの位置で「燃
   return[a,[]];
 };
 const lerpC=(a,b,t)=>{t=Math.max(0,Math.min(1,t));const r=((a>>16)&255)+(((b>>16)&255)-((a>>16)&255))*t,g=((a>>8)&255)+(((b>>8)&255)-((a>>8)&255))*t,bl=(a&255)+((b&255)-(a&255))*t;return(Math.round(r)<<16)|(Math.round(g)<<8)|Math.round(bl);};
-/* --- ガラス風の質感：敵の体の上に重ねる（内側の色味・屈折の弧・ハイライト・白い縁）。ハイライトは世界で固定（体が回っても回らない） --- */
-let GLASS_ROT=0; // 今描いている敵の体の回転角（ハイライトと屈折の向きを、どの敵でも世界で固定するため）
-function glassOv(g,r,pal,ra,al){al=al===undefined?1:al;
-  g.save();g.rotateCanvas(-(ra||0));
-  g.fillStyle(pal.c1,0.14*al);g.fillCircle(0,0,r*0.9);
-  g.lineStyle(2,pal.c2,0.45*al);g.beginPath();g.arc(0,0,r*0.8,0.3,1.4,false);g.strokePath();
-  g.lineStyle(3,0xffffff,0.75*al);g.beginPath();g.arc(0,0,r*0.74,3.55,4.45,false);g.strokePath();
-  g.lineStyle(1.5,0xffffff,0.4*al);g.strokeCircle(0,0,r-1);
-  g.restore();
+/* --- 多面カットのガラス：光は世界で一定の向き（世界の座標の左上。カメラが回ると、画面上の光の向きも一緒に回る）から当たる。面は体にくっついているので、体が回ると、各面への光の当たり方（明るさ・きらめき）が変わる --- */
+let GLASS_ROT=0,GLASS_CAM=0; // 今描いている敵の体の回転角／カメラの回転（今は光の計算には使わない。光は世界に固定）
+const FC_N=8,FC_RT=0.46,FC_LA=-2.36; // 面の数／真ん中の面の大きさ（半径比）／光の来る向き(rad。-2.36＝世界の左上)
+const FC_L=(()=>{const x=Math.cos(FC_LA)*0.62,y=Math.sin(FC_LA)*0.62,z=0.78,l=Math.hypot(x,y,z);return[x/l,y/l,z/l];})(); // 面から光源への向き（世界の座標。zは手前）
+const FC_H=(()=>{const x=FC_L[0],y=FC_L[1],z=FC_L[2]+1,l=Math.hypot(x,y,z);return[x/l,y/l,z/l];})(); // きらめき（鏡面反射）用。真上から見ているので視線は(0,0,1)
+function facetLit(a,t,ra){ // 面の向きa（体の座標）・傾きt（0＝正面向き）・体の回転ra → [光の当たり0〜1, きらめき0〜1]
+const w=a+ra,st=Math.sin(t),nx=Math.cos(w)*st,ny=Math.sin(w)*st,nz=Math.cos(t);
+return[Math.max(0,nx*FC_L[0]+ny*FC_L[1]+nz*FC_L[2]),Math.pow(Math.max(0,nx*FC_H[0]+ny*FC_H[1]+nz*FC_H[2]),26)];
+}
+const FC_SZ=32,FC_NO=11,FC_NI=6,FC_CACHE={}; // 面の大きさをそろえる基準：半径32（通常の敵）で外周11点・内側6点
+const FC_get=sz=>{const q=(sz/FC_SZ)*(sz/FC_SZ),NO=Math.max(4,Math.round(FC_NO*q)),NI=Math.max(3,Math.round(FC_NI*q)),key=NO+'_'+NI;return FC_CACHE[key]||(FC_CACHE[key]=FC_make(NO,NI));}; // 敵が小さいほど面を少なく、大きいほど多く（面の数は半径の2乗に比例させて、1枚あたりの面積をそろえる。小さすぎる敵は最少の面数で止まる）
+const FC_make=(NO,NI)=>{ // 面の形（半径1の円の中。体の座標）：ランダムな三角形に区切る（外周NO点＋内側NI点＋中心。毎回同じ並びになるよう固定の乱数）。面ごとに向き・傾きもばらつかせる
+let sd=20261128;const rnd=()=>{sd=(sd+0x6D2B79F5)|0;let t=Math.imul(sd^(sd>>>15),1|sd);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};
+const TP=Math.PI*2,out=[],inn=[];
+for(let i=0;i<NO;i++)out.push((i+0.15+0.7*rnd())*TP/NO);
+for(let i=0;i<NI;i++)inn.push({a:(i+0.15+0.7*rnd())*TP/NI,r:0.36+0.26*rnd()});
+const C=[(rnd()-0.5)*0.16,(rnd()-0.5)*0.16],F=[];
+const add=(p)=>{const cx=(p[0]+p[2]+p[4])/3,cy=(p[1]+p[3]+p[5])/3,cr=Math.hypot(cx,cy);
+ const a=(cr>0.04?Math.atan2(cy,cx):rnd()*TP)+(rnd()-0.5)*1.4,t=Math.max(0.1,Math.min(1.05,0.12+0.7*Math.min(1,cr/0.85)+(rnd()-0.5)*0.55));
+ F.push({p,a,t,cx,cy});};
+const IV=j=>{const q=inn[j%NI];return[Math.cos(q.a)*q.r,Math.sin(q.a)*q.r];};
+const OV=k=>{const q=out[k%NO];return[Math.cos(q),Math.sin(q)];};
+for(let j=0;j<NI;j++){const u=IV(j),v=IV(j+1);add([C[0],C[1],u[0],u[1],v[0],v[1]]);} // 中心まわり
+// 内側の輪と外周を、角度の順に交互につないで三角形にする
+let k0=0;for(let k=0;k<NO;k++)if(out[k]<=inn[0].a)k0=k;
+const ao=[],ai=inn.map(q=>q.a);ai.push(inn[0].a+TP);
+for(let k=0;k<=NO;k++){let v=out[(k0+k)%NO];while(ao.length&&v<=ao[ao.length-1])v+=TP;ao.push(v);}
+let i=0,k=0;
+while(i<NI||k<NO){
+ const advI=k>=NO||(i<NI&&ai[i+1]<=ao[k+1]);
+ const I=IV(i),O=OV(k0+k);
+ if(advI){const I2=IV(i+1);add([I[0],I[1],I2[0],I2[1],O[0],O[1]]);i++;}
+ else{const O2=OV(k0+k+1);add([I[0],I[1],O[0],O[1],O2[0],O2[1]]);k++;}
+}
+return F;
+};
+function glassOv(g,r,pal,ra,al,sz){al=al===undefined?1:al;ra=ra||0;sz=sz||r; // sz＝画面に見える半径（砲台のように縮めて描くときは、rより小さい）
+const e=0.5/sz,FC=FC_get(sz); // 面と面のすき間（髪の毛ほどの線）が出ないよう、各面をほんの少し外へふくらませる
+for(const f of FC){
+const lt=facetLit(f.a,f.t,ra),d=lt[0],p=f.p,v=[];
+for(let n=0;n<3;n++){const dx=p[n*2]-f.cx,dy=p[n*2+1]-f.cy,l=Math.hypot(dx,dy)||1;v.push((p[n*2]+dx/l*e)*r,(p[n*2+1]+dy/l*e)*r);}
+// 下地（pal.c0）に重ねたときの色を先に混ぜておき、不透明で塗る（半透明のままだと面の境目に線が見える）
+let col=lerpC(pal.c0,lerpC(pal.c0,pal.c2,Math.min(1,d*1.1)),0.28+0.42*d); // 光が当たる面ほど明るく、背を向けた面は暗く
+if(lt[1]>0.04)col=lerpC(col,0xffffff,Math.min(0.85,lt[1])); // 光の向きにちょうど合った面はきらっと光る
+g.fillStyle(col,al);g.fillTriangle(v[0],v[1],v[2],v[3],v[4],v[5]);
+}
+g.lineStyle(1.5,0xffffff,0.4*al);g.strokeCircle(0,0,r-1);
+}
+function ibFacets(h,ra){ // 鉄の塊の面：角の削れた正方形（一辺2h）全体を、ランダムな三角形で埋める。面の大きさは本体の面と同じくらい（約140px²＝辺の長さ約17px）。向き・傾き・色の付け方も本体（FC_make／glassOv）と同じ。光は世界に固定なので、色は作るときに1回だけ決める
+  const pal=EPAL.iboss,c=h*0.3,N=Math.max(4,Math.round(2*h/16.9)),s=2*h/N,V=[],F=[];
+  for(let j=0;j<=N;j++){const row=[];for(let i=0;i<=N;i++){
+    let x=-h+i*s,y=-h+j*s;
+    if(i>0&&i<N)x+=(Math.random()-0.5)*0.7*s; // 辺の上の点は、辺に沿ってだけずらす
+    if(j>0&&j<N)y+=(Math.random()-0.5)*0.7*s;
+    const ex=Math.abs(x)+Math.abs(y)-(2*h-c);if(ex>0){x-=Math.sign(x)*ex/2;y-=Math.sign(y)*ex/2;} // 削れた角の外に出た点は、斜めの辺の上へ寄せる
+    row.push([x,y]);}V.push(row);}
+  const add=(a,b,d)=>{
+    const cx=(a[0]+b[0]+d[0])/3,cy=(a[1]+b[1]+d[1])/3,ar=Math.abs((b[0]-a[0])*(d[1]-a[1])-(d[0]-a[0])*(b[1]-a[1]))/2;if(ar<0.5)return;
+    const cr=Math.hypot(cx,cy)/h,an=(cr>0.04?Math.atan2(cy,cx):Math.random()*6.283)+(Math.random()-0.5)*1.4,t=Math.max(0.1,Math.min(1.05,0.12+0.7*Math.min(1,cr/0.85)+(Math.random()-0.5)*0.55));
+    const lt=facetLit(an,t,ra),dd=lt[0];let col=lerpC(pal.c0,lerpC(pal.c0,pal.c2,Math.min(1,dd*1.1)),0.28+0.42*dd);if(lt[1]>0.04)col=lerpC(col,0xffffff,Math.min(0.85,lt[1]));
+    const v=[];for(const p of[a,b,d]){const dx=p[0]-cx,dy=p[1]-cy,l=Math.hypot(dx,dy)||1;v.push(p[0]+dx/l*0.5,p[1]+dy/l*0.5);} // すき間の線が出ないよう、ほんの少し外へふくらませる
+    F.push({v,col});};
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const a=V[j][i],b=V[j][i+1],d=V[j+1][i+1],e=V[j+1][i];
+    if(Math.random()<0.5){add(a,b,d);add(a,d,e);}else{add(a,b,e);add(b,d,e);}
+  }
+  return F;
+}
+function plateHalves(sx,sy,hx,hy,hw,ra,pal){ // 盾の板：長い辺に沿って真ん中で横に半分に割り、2枚のガラスの面にする（線は引かない）。それぞれ外向きに傾いた面として、世界の光で照らす
+const dx=hx-sx,dy=hy-sy,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l,na=Math.atan2(ny,nx),ov=0.5,R=[];
+for(const sg of[1,-1]){
+const lt=facetLit(sg>0?na:na+Math.PI,0.55,ra),d=lt[0];
+let col=lerpC(pal.c0,lerpC(pal.c0,pal.c2,Math.min(1,d*1.1)),0.28+0.42*d);
+if(lt[1]>0.04)col=lerpC(col,0xffffff,Math.min(0.85,lt[1]));
+const o0=-ov*sg,o1=hw*sg; // 真ん中は0.5pxだけ重ねて、すき間の線が出ないようにする
+R.push({col,q:[{x:sx+nx*o0,y:sy+ny*o0},{x:hx+nx*o0,y:hy+ny*o0},{x:hx+nx*o1,y:hy+ny*o1},{x:sx+nx*o1,y:sy+ny*o1}]});
+}
+return R;
+}
+function crystalSpike(g,pal,ax,ay,bx,by,tx,ty,ang,ra,al){ // とがり（トゲ）も、真ん中の稜線で2つの面に割って、同じ光で照らす
+const mx=(ax+bx)/2,my=(ay+by)/2;
+for(const f of[[ax,ay,mx,my,ang+0.9],[mx,my,bx,by,ang-0.9]]){
+const lt=facetLit(f[4],0.75,ra);
+g.fillStyle(lerpC(pal.c0,lerpC(pal.c1,0xffffff,0.3),Math.min(1,lt[0]*1.15)),al);g.fillTriangle(f[0],f[1],f[2],f[3],tx,ty);
+if(lt[1]>0.05){g.fillStyle(0xffffff,Math.min(0.8,lt[1])*al);g.fillTriangle(f[0],f[1],f[2],f[3],tx,ty);}
+}
+g.lineStyle(1.2,0xffffff,0.5*al);g.strokeTriangle(ax,ay,bx,by,tx,ty);
 }
 const FW_PAL=[[0xff4d6d,0xffd166],[0x4cc9f0,0xf1faee],[0xffb703,0xff5d8f],[0x80ed99,0xffe66d],[0xc77dff,0x72efdd],[0xff9e00,0xffffff]]; // 花火の色の組み合わせ（外側の輪／内側の輪）
 const FW_G=60; // 花火の星が垂れ落ちる強さ（画面の下向き、px/秒²）
@@ -473,7 +585,10 @@ const UPG=[ // ボス撃破ごとの三択。rk＝ランク（0=C 1=B 2=A(赤) 3
   {id:'sh1',rk:0,w:30,ic:'⬡',nm:'Shield x1',ds:'+1 square shield layer'},
   {id:'sh2',rk:1,w:20,ic:'⬡⬡',nm:'Shield x2',ds:'+2 square shield layers'},
   {id:'sh4',rk:2,w:12,ic:'⬡⬡⬡',nm:'Shield x4',ds:'+4 square shield layers'},
-  {id:'sh6',rk:3,w:6,ic:'⬡⬡⬡⬡',nm:'Shield x6',ds:'+6 square shield layers'}
+  {id:'sh6',rk:3,w:6,ic:'⬡⬡⬡⬡',nm:'Shield x6',ds:'+6 square shield layers'},
+  {id:'dg1',rk:1,w:20,ic:'≫',nm:'Dodge x1',ds:'Quick dash that dodges attacks. +1 stamina'},
+  {id:'dg2',rk:2,w:12,ic:'≫≫',nm:'Dodge x2',ds:'Quick dash that dodges attacks. +2 stamina'},
+  {id:'dg3',rk:3,w:6,ic:'≫≫≫',nm:'Dodge x3',ds:'Quick dash that dodges attacks. +3 stamina'} // Dodge：スマホ＝指を置いてすぐスティックを倒す／PC＝移動キー2回押し。B=+1／A=+2／S=+3 でスタミナの最大が増える
 ];
 // 三択強化カードのアイコン：UPGのic（記号の並び）を1文字ずつ自前のSVGに置き換えて描く（色はカードのランク色）
 const UI_SV=(vb,body,w,h,cl)=>'<svg class="ui'+(cl?' '+cl:'')+'" viewBox="'+vb+'" style="width:'+(w||1)+'em;height:'+(h||1)+'em">'+body+'</svg>'; // w,h＝表示の大きさ（em）。ハート系は図形ぴったりに切って大きめに描く
@@ -488,7 +603,8 @@ const UI_MAP={
   '▲':UI_SV('0 0 24 24','<path d="M12 4 22 20H2z" fill="currentColor"/>'),
   '⇒':UI_SV('0 0 24 24','<path d="M13 5l9 7-9 7z" fill="currentColor"/><path d="M2 7h7M1 12h8M2 17h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'),
   '◉':UI_SV('0 0 24 24','<path d="M21.5 3v18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="8" cy="12" r="5" fill="currentColor"/><path d="M13.5 12l1.6-3.4 2.2 6.8 1.6-3.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
-  '⬡':UI_SV('0 0 24 24','<path d="M12 2.8 20.2 7.4v9.2L12 21.2 3.8 16.6V7.4z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>')
+  '⬡':UI_SV('0 0 24 24','<path d="M12 2.8 20.2 7.4v9.2L12 21.2 3.8 16.6V7.4z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>'),
+  '≫':UI_SV('0 0 24 24','<path d="M3 5l7 7-7 7" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>')
 };
 function ucIc(ic){ // 全アイコン共通：個数＝ランク。1〜3個は一列、4個は2×2（四角形の角）、5個は上2・下3
   let ch,n;
@@ -589,6 +705,54 @@ function pingSfx(vol,pm,ring){
   }catch(_){}
 }
 
+/* --- 鉄どうしがぶつかる「ガシャン」（やわらかめ）。ローパスでこもらせたノイズの衝撃＋丸い金属の響き（sine/triangle）＋低い鈍い音を重ね、1回だけぶつける。vol＝大きさ --- */
+let CL_NZ=null;
+function clashSfx(vol){
+  if(!SYNTH_SFX||!AC||!save.sfx)return;
+  try{
+    const v=vol==null?1:vol,t0=AC.currentTime;
+    if(!CL_NZ){const n=Math.floor(AC.sampleRate*0.4),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;CL_NZ=b;}
+    [[0,1,1]].forEach(([dt,k,pm])=>{ // 1回だけぶつかる（[遅れ, 大きさ, 音程の倍率]）
+      const t=t0+dt,vk=v*k,lp=AC.createBiquadFilter(),mg=AC.createGain(); // 全体をローパスでこもらせて、高音のきつさを取る
+      lp.type='lowpass';lp.frequency.value=2200;lp.Q.value=0.5;mg.gain.value=0.55;lp.connect(mg);mg.connect(AC.destination);
+      const ns=AC.createBufferSource(),bp=AC.createBiquadFilter(),ng=AC.createGain(); // ガシャッ：低めの帯域のノイズ
+      ns.buffer=CL_NZ;bp.type='bandpass';bp.frequency.value=1300*pm;bp.Q.value=0.5;
+      ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.5*vk,t+0.015);ng.gain.exponentialRampToValueAtTime(0.001,t+0.26);
+      ns.connect(bp);bp.connect(ng);ng.connect(lp);ns.start(t);ns.stop(t+0.3);
+      [[260,0.2,0.34,'triangle'],[690,0.14,0.3,'sine'],[1130,0.1,0.26,'triangle'],[1820,0.06,0.2,'sine']].forEach(([f,a,d,ty])=>{ // 整数倍でない、丸い金属の響き
+        const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f*pm*1.02,t);o.frequency.exponentialRampToValueAtTime(f*pm,t+0.05);
+        g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(a*vk,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+d);
+        o.connect(g);g.connect(lp);o.start(t);o.stop(t+d+0.02);
+      });
+      const lo=AC.createOscillator(),lg=AC.createGain(); // 鈍い低音（重さ）
+      lo.type='sine';lo.frequency.setValueAtTime(170*pm,t);lo.frequency.exponentialRampToValueAtTime(70,t+0.16);
+      lg.gain.setValueAtTime(0.0001,t);lg.gain.exponentialRampToValueAtTime(0.4*vk,t+0.01);lg.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+      lo.connect(lg);lg.connect(lp);lo.start(t);lo.stop(t+0.22);
+    });
+  }catch(_){}
+}
+
+/* --- 回避（Dodge）の風切り音「ヒュッ」。音程のある音は使わず、ノイズの帯域を低→高→低と動かして、横を空気が切っていく感じにする。vol＝大きさ --- */
+let DG_NZ=null;
+function dodgeSfx(vol){
+  if(!SYNTH_SFX||!AC||!save.sfx)return;
+  try{
+    const t=AC.currentTime,v=vol==null?1:vol,D=0.3;
+    if(!DG_NZ){const n=Math.floor(AC.sampleRate*0.4),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;DG_NZ=b;}
+    // 本体：帯域をしぼったノイズ。中心の周波数が上がってから下がる（通り過ぎる感じ）。音量はふわっと立ち上がって、すっと消える
+    const ns=AC.createBufferSource(),bp=AC.createBiquadFilter(),ng=AC.createGain();
+    ns.buffer=DG_NZ;bp.type='bandpass';bp.Q.value=1.1;
+    bp.frequency.setValueAtTime(500,t);bp.frequency.exponentialRampToValueAtTime(2600,t+0.1);bp.frequency.exponentialRampToValueAtTime(900,t+D);
+    ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.5*v,t+0.07);ng.gain.exponentialRampToValueAtTime(0.001,t+D);
+    ns.connect(bp);bp.connect(ng);ng.connect(AC.destination);ns.start(t);ns.stop(t+D+0.02);
+    // うすい高音の空気感：ほんのり「シュッ」を足す
+    const hs=AC.createBufferSource(),hp=AC.createBiquadFilter(),hg=AC.createGain();
+    hs.buffer=DG_NZ;hp.type='highpass';hp.frequency.value=4500;
+    hg.gain.setValueAtTime(0.0001,t);hg.gain.exponentialRampToValueAtTime(0.1*v,t+0.05);hg.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+    hs.connect(hp);hp.connect(hg);hg.connect(AC.destination);hs.start(t);hs.stop(t+0.22);
+  }catch(_){}
+}
+
 /* --- 敵を壁に叩きつける音。bump.mp3だけを鳴らす（低音の合成音は重ねない）。k=衝撃の強さ0〜1、pm=音程の倍率（コンボで上がる）。強いほど大きく低い。bumpが読み込み前の間だけ、従来のドゴッ（合成音のみ）を鳴らす --- */
 const SLAM_VOL=0.7; // この音全体の大きさ。ここで調整できる
 const SLAM_BUMP=2; // bump.mp3 の大きさ。上げると大きく、下げると小さくなる
@@ -616,6 +780,7 @@ const comboEl=document.getElementById('combo'),msgEl=document.getElementById('ms
 const overEl=document.getElementById('over'),ovs=document.getElementById('ovs');
 const ctr=el=>{const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,r:r.width/2};};
 let stickId=null,sx=0,sy=0,fireId=null,fireQ=false,kfire=false;
+let dgQ=0,dgQT=0,stDownT=0,stArm=false;const kTap={}; // Dodgeの入力：発動の向き(−1／1)とその時刻／スティックの指を置いた時刻・まだ判定の時間内か／PCの移動キーを最後に押した時刻（向きごと）
 let stX=0,stY=0,knX=0,knY=0; // フローティングスティックの基準点(画面座標)・ノブの表示位置
 const STICK_FULL=36,STICK_ZONE_X=0.6,STICK_ZONE_Y=0.15; // 全速になるまでの親指の移動量(px)／スティックを出せる範囲（画面左の何割まで・上の何割は除く）
 function setStick(e){ // 基準点は親指の最初の位置。親指が離れすぎたら基準点が追いかけてくる（軸ごと）ので、切り返しは小さな動きで済む
@@ -623,6 +788,7 @@ function setStick(e){ // 基準点は親指の最初の位置。親指が離れ�
   if(Math.abs(dx)>STICK_FULL){stX+=dx-Math.sign(dx)*STICK_FULL;dx=e.clientX-stX;}
   if(Math.abs(dy)>STICK_FULL){stY+=dy-Math.sign(dy)*STICK_FULL;dy=e.clientY-stY;}
   sx=dx/STICK_FULL;sy=dy/STICK_FULL;
+  if(stArm){if(performance.now()-stDownT>DG_WIN)stArm=false;else if(Math.abs(sx)>=DG_FLICK){dgQ=Math.sign(sx);dgQT=performance.now();stArm=false;}} // 指を置いてすぐ左右へ倒した：Dodge
   const m=Math.max(1,Math.hypot(sx,sy));knX=sx/m;knY=sy/m; // ノブの表示は円の中に収める
   const c=stk.offsetWidth/2;stk.style.left=(stX-c)+'px';stk.style.top=(stY-c)+'px';stk.style.bottom='auto';
 }
@@ -638,18 +804,19 @@ document.addEventListener('pointerdown',e=>{
     fireId=e.pointerId;try{e.target.setPointerCapture(e.pointerId);}catch(_){}fireQ=true;
   }else if(stickId===null&&inStickZone(e)){
     stickId=e.pointerId;try{e.target.setPointerCapture(e.pointerId);}catch(_){}
-    stX=e.clientX;stY=e.clientY;setStick(e);
+    stX=e.clientX;stY=e.clientY;stDownT=performance.now();stArm=true;setStick(e);
   }
 });
 document.addEventListener('pointermove',e=>{if(e.pointerId===stickId)setStick(e);});
 const endP=e=>{
-  if(e.pointerId===stickId){stickId=null;sx=sy=0;knX=knY=0;stk.style.left=stk.style.top=stk.style.bottom='';} // 指を離したら、スティックは元の位置へ戻る
+  if(e.pointerId===stickId){stArm=false;stickId=null;sx=sy=0;knX=knY=0;stk.style.left=stk.style.top=stk.style.bottom='';} // 指を離したら、スティックは元の位置へ戻る
   if(e.pointerId===fireId)fireId=null;
 };
 document.addEventListener('pointerup',endP);document.addEventListener('pointercancel',endP);
 const keys={};
 addEventListener('keydown',e=>{
   keys[e.key.toLowerCase()]=1;
+  if(!e.repeat){const k=e.key.toLowerCase(),d=(k==='arrowright'||k==='d')?1:(k==='arrowleft'||k==='a')?-1:0;if(d){const now=performance.now();if(kTap[d]&&now-kTap[d]<DG_DBL){dgQ=d;dgQT=now;kTap[d]=0;}else kTap[d]=now;kTap[-d]=0;}} // 同じ向きの移動キーを素早く2回押した：Dodge
   if(e.key===' '&&!e.repeat&&!paused){kfire=true;fireQ=true;}
   if((e.key==='p'||e.key==='P'||e.key==='Escape')&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey)setPaused(!paused); // P／Escキーでも一時停止
   if((e.key==='r'||e.key==='R')&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){ // Rキー：強化を選んでいる間はリロード／それ以外はテストモードのみステージスキップ（右上のボタンと同じ）
@@ -780,7 +947,7 @@ const pickEl=document.getElementById('pick');
   refresh();
   lab('Enemy (tap to start)');
 }
-[['default','Default'],['norm','Normal'],['chaser','Chaser'],['eyes','Laser Grunt'],['beamer','Long Beam'],['clam','Shell'],['boss','Shield Boss'],['eboss','Laser Boss'],['gboss','Glass Boss'],['home','Home']].forEach(([k,t])=>{
+[['default','Default'],['norm','Normal'],['chaser','Chaser'],['eyes','Laser Grunt'],['beamer','Long Beam'],['clam','Shell'],['boss','Shield Boss'],['eboss','Laser Boss'],['gboss','Glass Boss'],['pboss','Prism Boss'],['iboss','Iron Boss'],['iceboss','Ice Boss'],['home','Home']].forEach(([k,t])=>{
   const b=document.createElement('button');b.textContent=t;b.style.cssText='width:200px;padding:9px;flex:none;font:inherit;border-radius:8px;border:1px solid #888;background:#223;color:#fff';
   b.addEventListener('pointerup',()=>{pickEl.style.display='none';if(k==='home'){goHome();return;}testPick=k;runGame();});
   pickEl.appendChild(b);
@@ -939,6 +1106,12 @@ function renderShop(){
     shopRow.appendChild(c);
   });
 }
+shopRow.addEventListener('wheel',e=>{ // マウスのホイール（縦回転）で、ショップを横にスクロールする
+  const d=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?e.deltaY:e.deltaX;if(!d)return;
+  e.preventDefault();shopRow.style.scrollSnapType='none'; // スナップがあると、少しずつ動かしても元に引き戻されるので、ホイールの間は切る
+  shopRow.scrollLeft+=d*(e.deltaMode===1?16:e.deltaMode===2?shopRow.clientWidth:1);
+},{passive:false});
+shopRow.addEventListener('touchstart',()=>{shopRow.style.scrollSnapType='';},{passive:true}); // タッチで操作する時は、スナップを元に戻す
 document.getElementById('shopBtn').addEventListener('pointerup',()=>{renderShop();shopEl.style.display='flex';shopRow.scrollLeft=0;});
 document.getElementById('shopBack').addEventListener('pointerup',()=>{shopEl.style.display='none';updCoin();});
 updCoin();
@@ -1062,7 +1235,7 @@ const hex=c=>'#'+c.toString(16).padStart(6,'0');
 function tri2(c,ax,ay,bx,by,cx,cy){c.beginPath();c.moveTo(ax,ay);c.lineTo(bx,by);c.lineTo(cx,cy);c.closePath();c.fill();}
 function line2(c,w,col,al,x0,y0,x1,y1){c.globalAlpha=al;c.lineWidth=w;c.strokeStyle=col;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.globalAlpha=1;}
 function drawFoe2D(c,type){ // 実ゲームの見た目（盾つきボス含む）をCanvas2Dで再現
-  const pal=type==='eboss'?EPAL.eyes:(EPAL[type]||EPAL.norm),c0=hex(pal.c0),c1=hex(pal.c1),c2=hex(pal.c2);
+  const pal=type==='eboss'?EPAL.eyes:type==='pboss'?EPAL.prism:(EPAL[type]||EPAL.norm),c0=hex(pal.c0),c1=hex(pal.c1),c2=hex(pal.c2);
   if(type==='eboss'){ // 砲台のボス：紫の本体に、正面向きの二つの目と左右一つずつの砲台
     const r=BR;
     c.fillStyle=c1;
@@ -1099,21 +1272,23 @@ function drawFoe2D(c,type){ // 実ゲームの見た目（盾つきボス含む�
     c.fillStyle=c2;for(const y of[-0.3,0.3]){c.beginPath();c.arc(0,r*y,7*BK,0,7);c.fill();}
     for(const side of[-1,1]){
       const{sx,sy,hx,hy}=shieldPts(r,side);
-      const qd=plateQuad(sx,sy,hx,hy,SH_R);c.beginPath();qd.forEach((p,k)=>k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fillStyle=c0;c.fill();c.lineWidth=3;c.strokeStyle=c2;c.stroke();
-      line2(c,2,c1,0.85,sx+(hx-sx)*0.12,sy+(hy-sy)*0.12,sx+(hx-sx)*0.9,sy+(hy-sy)*0.9);
+      const qd=plateQuad(sx,sy,hx,hy,SH_R);for(const hf of plateHalves(sx,sy,hx,hy,SH_R,0,pal)){c.beginPath();hf.q.forEach((p,k)=>k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fillStyle=hex(hf.col);c.fill();}
+      c.beginPath();qd.forEach((p,k)=>k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.lineWidth=3;c.strokeStyle=c2;c.stroke();
     }
   }else{
+    c.save();if(type==='pboss')c.scale(BR/ER,BR/ER); // プリズムのボスは、目玉の敵を大きくした姿
     c.fillStyle=c1;
     for(let i=0;i<pal.n;i++){const a=i*Math.PI*2/pal.n,co=Math.cos(a),si=Math.sin(a),r0=ER-4;tri2(c,co*r0-si*9,si*r0+co*9,co*r0+si*9,si*r0-co*9,co*(ER+11),si*(ER+11));}
     c.fillStyle=c0;c.beginPath();c.arc(0,0,ER,0,7);c.fill();
     c.lineWidth=3;c.strokeStyle=c2;c.stroke();
-    if(type==='eyes'||type==='beamer'){c.fillStyle=hex(type==='beamer'?BM_COL:EYE_COL);c.beginPath();c.arc(ER*0.3,0,EYE_PR,0,7);c.fill();}
+    if(type==='eyes'||type==='beamer'||type==='pboss'){c.fillStyle=hex(type==='beamer'?BM_COL:type==='pboss'?PB_COL:EYE_COL);c.beginPath();c.arc(ER*0.3,0,EYE_PR,0,7);c.fill();}
     else{c.fillStyle=c2;for(const y of[-7,7]){c.beginPath();c.arc(ER*0.4,y,5,0,7);c.fill();}}
+    c.restore();
   }
 }
 // 物理はPhaser同梱のMatter.jsを利用（回転・摩擦・反発つき。追加の読み込み不要）
 const M=Phaser.Physics.Matter.Matter;
-const PRAD=ty=>ty==='boss'?63:ty==='eboss'?70:36; // 積もる時の敵の半径
+const PRAD=ty=>ty==='boss'?63:ty==='eboss'?70:ty==='pboss'?BR+14:36; // 積もる時の敵の半径
 const ovCoinBox=document.getElementById('ovCoin'),ovGainEl=document.getElementById('ovGain');
 const CHG=0.14,BOUNCE=1.3,FLYD=0.5; // 溜め／跳ね回る／コインが所持金へ飛ぶ（各秒数）
 let pileRaf=0,pileCtl=null;
@@ -1128,7 +1303,7 @@ function burstCoins(C){ // 溜め終わり：敵が一斉に弾けてコイン�
   const{eng,k,W,H}=C;
   eng.gravity.y=1.1;eng.enableSleeping=false;
   M.Composite.add(eng.world,M.Bodies.rectangle(W/2,-50,W*3,100,{isStatic:true,restitution:0.9})); // 天井を足して、画面全体を箱にする
-  const wt=ty=>ty==='boss'||ty==='eboss'?3:1;let sw=0;for(const b of C.bodies)sw+=wt(b.label);
+  const wt=ty=>ty==='boss'||ty==='eboss'||ty==='pboss'?3:1;let sw=0;for(const b of C.bodies)sw+=wt(b.label);
   const want=clamp(Math.round(lastGain/3),6,300),rb=clamp(8*k,5,10),coins=[];let sparkLeft=240;
   for(const b of C.bodies){
     const R=PRAD(b.label)*k,n=Math.max(1,Math.round(want*wt(b.label)/sw)),cx=b.position.x,cy=b.position.y;
@@ -1202,8 +1377,8 @@ function makePileBody(ty,x0,y0,k,r){
 function startPile(log){
   cancelAnimationFrame(pileRaf);
   const W=innerWidth,H=innerHeight,list=log.slice(-120);
-  // 敵が多くて収まらないときは、画面の上からぎりぎりはみ出る大きさまで小さくする
-  const a0=list.reduce((a,ty)=>a+Math.PI*PRAD(ty)**2,0)||1,k=clamp(Math.min(W/420*1.1,Math.sqrt(0.78*W*H/a0)),0.3,1.3);
+  // 敵の大きさは、プレイ中の画面と同じ（直線ステージ：横幅876×高さ525を画面に映すときのズーム）。多くて画面に収まらなくても小さくしない
+  const k=lineView(W,H,{x0:-438,x1:438,y0:0,y1:525}).z;
   pile.width=Math.round(W*DPR);pile.height=Math.round(H*DPR);
   const eng=M.Engine.create({enableSleeping:true,positionIterations:10,velocityIterations:8});
   eng.gravity.y=2.2;
@@ -1290,7 +1465,7 @@ class Main extends Phaser.Scene{
     this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:freeNext?1:startStage();this.kills=0;this.runMax=0;this.spkN=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
     this.es=[];(this.dmgT||[]).forEach(t=>t.destroy());this.dmgT=[];this.combo=0;this.comboT=0;this.wallF=0;this.imps=[];this.shards=[];this.fwk=[];this.fwf=[];this.chunks=[];this.resT=0;this.msgT=0;this.yankC=0;
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
-    this.rerolls=1;this.mv=1;this.rest=TUNE.rest;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
+    this.rerolls=1;this.mv=1;this.rest=TUNE.rest;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.dg=0;this.dgT=[];this.dgPop=[];this.dgR=0;this.dgD=1;this.dgAc=0;this.afi=[];this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
     this.cameras.main.setBackgroundColor(0x101728);
     this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=TUT_TURN_T+TUT_GOAL_T;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
     this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
@@ -1522,9 +1697,9 @@ class Main extends Phaser.Scene{
   }
   spawn(){
     const sn=this.stage<1?'line':shapeFor(this.stage);if(sn!==RAIL.name)this.changeShape(sn);
-    this.pieces=[];this.bul=[];this.es=[];this.spawnA0=rnd(0,6.283);
+    this.pieces=[];this.bul=[];this.es=[];this.fz=null;this.spawnA0=rnd(0,6.283);
     const pk=this.stage===1?testPick:null; // STAGE1だけ選択画面の指定に従う
-    const bk=(pk==='boss'||pk==='eboss'||pk==='gboss')?pk:bossFor(this.stage); // 今回出すボス（テストの指定があればそれ、なければステージごとの固定）
+    const bk=(pk==='boss'||pk==='eboss'||pk==='gboss'||pk==='pboss'||pk==='iboss'||pk==='iceboss')?pk:bossFor(this.stage); // 今回出すボス（テストの指定があればそれ、なければステージごとの固定）
     if(this.tutOn&&this.stage===0){ // チュートリアルの的：直線レールの真上で止まっていて、攻撃もしない。壁に1回ぶつかれば壊れる
       const e={type:'norm',tut:true,r:ER,x:AR.sx,y:(AR.rect?(AR.rect.y0+AR.sy)/2:AR.sy),vx:0,vy:0,a:0,w:0,hp:1,max:1,flash:0,next:1e9,tele:0,dead:false}; // 見るパートも実践パートも同じ初期位置（画面の真ん中と上端の、ちょうど真ん中あたり）
       this.es=[e];this.e=e;this.hitE.explode(20,AR.sx,AR.sy);
@@ -1532,6 +1707,21 @@ class Main extends Phaser.Scene{
       const mx=Math.round(hpAt(this.stage,BOSS_HP_SLOPE)*1.4);
       this.e={type:'boss',kind:'eyes',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1.5,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,
         arms:[0,1].map(i=>({alive:true,tear:0,flash:0,fire:1.2+i*3,chg:0}))}; // 左右が3秒ずつずれて、交互に撃つ
+      this.hitE.explode(40,AR.sx,AR.sy);this.msg('BOSS');
+    }else if(bk==='pboss'){ // プリズムのボス：真ん中に固定された透明な三角形のプリズムが少しずつ回り、水色の大きな目玉の本体がそのまわりを回りながら、プリズムへ速い光線を6発ほど続けて撃つ。光線はプリズムの中で10回ほど反射して、ランダムな向きに出てくる
+      const mx=Math.round(hpAt(this.stage,BOSS_HP_SLOPE)*1.4),pr={cx:AR.sx,cy:AR.sy,R:PB_R,rot:rnd(0,6.283),glow:0,gone:false},a0=rnd(0,6.283);
+      this.e={type:'boss',kind:'prism',r:BR,m:2.4,I:BR*BR*5,x:pr.cx+Math.cos(a0)*PB_ORB,y:pr.cy+Math.sin(a0)*PB_ORB,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1.5,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,pr,oa:a0,od:Math.random()<0.5?1:-1,fire:1.8,chg:0,vol:0,
+        arms:[{alive:false,tear:0,flash:0},{alive:false,tear:0,flash:0}]};
+      this.hitE.explode(40,this.e.x,this.e.y);this.msg('BOSS');
+    }else if(bk==='iceboss'){ // 氷のボス：白い身体のまわりを、雪の花のような氷の結晶が1つ、ふわふわとついて行く。結晶から太いビームを、線のように一瞬で出し（進んでいかない）、ゆっくり回して、壁を突き抜ける
+      const mx=Math.round(hpAt(this.stage,BOSS_HP_SLOPE)*1.4);
+      this.e={type:'boss',kind:'ice',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,sp:0,spK:0,spA:0,gt:0,ob:rnd(0,6.283),os:0.7,iw:1.6,ib:null,cr:{x:AR.sx+ICE_ORB,y:AR.sy,vx:0,vy:0,a:0},
+        arms:[{alive:false,tear:0,flash:0},{alive:false,tear:0,flash:0}]};
+      this.fz=this.mkIce();this.hitE.explode(40,AR.sx,AR.sy);this.msg('BOSS');
+    }else if(bk==='iboss'){ // 鉄のボス：金属の身体。ガキンガキンと音を立ててステージの上に鉄の四角い塊を作り、塊が振動してから、ドスンドスンと落ちて壊れる
+      const mx=Math.round(hpAt(this.stage,BOSS_HP_SLOPE)*1.4);this.blk=[];
+      this.e={type:'boss',kind:'iron',r:BR,m:2.4,I:BR*BR*5,x:AR.sx,y:AR.sy,vx:0,vy:0,a:0,w:0,hp:mx,max:mx,flash:0,next:1,tele:0,teleMax:0.8,dead:false,grip:0,limp:0,sp:0,spK:0,spA:0,gt:0,ck:0,iw:1.5,ibN:0,ibCd:0,
+        arms:[{alive:false,tear:0,flash:0},{alive:false,tear:0,flash:0}]};
       this.hitE.explode(40,AR.sx,AR.sy);this.msg('BOSS');
     }else if(bk==='gboss'){ // ガラスのボス：灰色の身体の中で、オレンジに光る玉がグニョグニョ動く。玉から一部が膨らんで分離し、小さい光の玉になって、冷めて固まり小さい敵になる（綱引き中も続ける）
       const mx=Math.round(hpAt(this.stage,BOSS_HP_SLOPE)*1.4);
@@ -1561,11 +1751,12 @@ class Main extends Phaser.Scene{
       if(this.stage>=1)this.msg(this.free?'FREE PRACTICE':'STAGE '+this.stage);
     }
     if(!this.es.length)this.es=[this.e]; // ボスは1体
-    {const p=at(this.s);for(const e of this.es)e.a=Math.atan2(p.y-e.y,p.x-e.x);} // スポーン時は自機の方を向く
+    {const p=at(this.s);for(const e of this.es)if(e.kind!=='prism')e.a=Math.atan2(p.y-e.y,p.x-e.x);} // スポーン時は自機の方を向く
     this.updHud();
   }
   breakEnemy(e){ // 敵が破片になって砕け散る：貝の盾・ボスのパーツと同じ、細かいガラスの欠片（shards）。数は体の大きさに比例
-const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm),r=e.r||ER,cs=[pal.c2,0xffffff,pal.c1,0x9fb0d6]; // 砲台のボスは紫の破片
+if(e.pr)e.pr.gone=true;
+    const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='iron'?EPAL.iboss:e.kind==='ice'?EPAL.iceboss:e.kind==='eyes'?EPAL.eyes:e.kind==='prism'?EPAL.prism:(EPAL[e.type]||EPAL.norm),r=e.r||ER,cs=[pal.c2,0xffffff,pal.c1,0x9fb0d6]; // 砲台のボスは紫の破片
 const n=clamp(Math.round(64*Math.PI*r*r/(4*CL_S*CL_S)),36,110);
 for(let i=0;i<n;i++){
 const th=rnd(0,6.283),rr=r*Math.sqrt(Math.random()),x=e.x+Math.cos(th)*rr,y=e.y+Math.sin(th)*rr,a=Math.atan2(y-e.y,x-e.x)+rnd(-0.4,0.4),sp=rnd(250,760);
@@ -1601,7 +1792,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       h.ang=h.rel+e.a;h.dvx=e.vx*0.35+rnd(-40,40);h.dvy=e.vy*0.35+rnd(-40,40);h.dw=rnd(-3,3);h.trail.length=0;
       this.jerkT=0;this.reeling=false;h.st='drift';h.tg=null;
     }else if(h&&h.st!=='back'&&!(h.st==='stuck'&&this.es.includes(h.tg)))h.st='back'; // 別の敵に刺さっている銛はそのまま
-    if(!e.mn)this.log.push(e.kind==='eyes'?'eboss':e.kind==='glass'?'gboss':e.type);
+    if(!e.mn)this.log.push(e.kind==='eyes'?'eboss':e.kind==='glass'?'gboss':e.kind==='prism'?'pboss':e.kind==='iron'?'iboss':e.kind==='ice'?'iceboss':e.type);
     if(this.es.length){ // まだ敵が残っている：ステージは進まない
       for(const b of this.bul)if(b.owner===e&&b.dy===undefined){b.dy=BM_DIE;b.vx=b.vy=0;b.emit=0;}
       this.e=this.es[0];if(!e.mn)this.kills++;this.pickFocus();
@@ -1759,6 +1950,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(e&&e.tut&&this.tp!=='run')return; // チュートリアルの敵は、最後の「移動」の時だけ壊れる
     if(!e||e.dead||imp<HIT_MIN||this.hcool>0)return;
     this.hcool=0.06;
+    if(e.kind==='ice')this.iceBreak(x,y); // 氷のボスを壁にぶつけると、ぶつけた場所の近くの氷が割れる
     if(e.type==='clam'&&e.shell){ // 頑丈なシールド：壁にぶつけてもびくともしない（火花だけ）
       this.hitE.explode(6,x,y);sfx(900,400,0.06,0.2,'triangle');return;
     }
@@ -1896,6 +2088,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     else if(id[0]==='k')this.addSpike(2**(+id[1]));
     else if(id==='r1'||id==='r2'||id==='r3')this.rerolls+=+id[1];
     else if(id==='sh1'||id==='sh2'||id==='sh4'||id==='sh6')this.shn+=+id.slice(2); // 上限なし
+    else if(id==='dg1'||id==='dg2'||id==='dg3'){for(let i=+id[2];i>0;i--)this.dgPop[this.dg++]=DG_POP;} // Dodge：B=+1／A=+2／S=+3 でスタミナの最大が増える（増えた分は満タンで、パッと光る）
     else if(id==='rv')this.rev++;
     this.updHud();
   }
@@ -2025,12 +2218,28 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     this.sparkE.explode(10,o.x,o.y);
     if(opt&&opt.snd)sfx(520,160,0.45,0.3,'sawtooth');else sfx(1200,300,0.12,0.25,'square');
   }
-  beamWillHit(b,q){ // 光線の頭がこのまま進むと、SLOW_AHEAD秒以内に自機へ当たるか（壁の跳ね返りも考慮。自機は今の位置で判定）
-    const p=q.p;let x=b.x,y=b.y,vx=b.vx,vy=b.vy,tr=SLOW_AHEAD,bn=b.n;
+  predictPlayer(){ // 自機が「今の入力を押し続けた」場合の、SLOW_AHEAD秒先までの位置を1ステップごとに予測する（実際の移動式 step() と同じ追従・最大速度・レール端の扱い）
+    const n=Math.ceil(SLOW_AHEAD/STEP0)+1,out=[];
+    const inx=this.tutOn?0:inputX(),vmax=SPEED*this.mv,tgt=inx*vmax;
+    const lim=Math.max(vmax,Math.abs(this.vel)); // 最大速度。引っ張られて今それを超えていても、そこから増えはしない
+    let s=this.s,v=this.vel;
+    for(let k=0;k<n;k++){
+      const p=at(s);out.push({p,nx:p.ty,ny:-p.tx});
+      v+=(tgt-v)*(1-Math.exp(-(inx*v<0?TURN_K:14)*STEP0));
+      v=clamp(v,-lim,lim);
+      s+=v*STEP0;
+      if(RAIL.open){if(s<0){s=0;if(v<0)v=0;}else if(s>L){s=L;if(v>0)v=0;}}
+    }
+    return out;
+  }
+  beamWillHit(b,q){ // 光線の頭がこのまま進むと、SLOW_AHEAD秒以内に自機へ当たるか（壁の跳ね返りも考慮）。自機は、今の入力を押し続けた場合の動きを予測して判定（SLOW_PRED=falseなら今の位置のまま）
+    if(!this.pp)this.pp=this.predictPlayer();
+    const pp=this.pp;let x=b.x,y=b.y,vx=b.vx,vy=b.vy,tr=SLOW_AHEAD,bn=b.n;
     for(let it=0;tr>1e-6&&it<4;it++){
-      const w=arRay(x,y,vx,vy,3),th=w.t,t=Math.max(0,Math.min(th,tr)),x2=x+vx*t,y2=y+vy*t,m=Math.ceil(Math.hypot(x2-x,y2-y)/8)||1;
+      const w=arRay(x,y,vx,vy,3),th=w.t,t=Math.max(0,Math.min(th,tr)),x2=x+vx*t,y2=y+vy*t,m=Math.ceil(Math.hypot(x2-x,y2-y)/8)||1,t0=SLOW_AHEAD-tr;
       for(let j=1;j<=m;j++){
-        const f=j/m,rx=x+(x2-x)*f-p.x,ry=y+(y2-y)*f-p.y,lx=rx*q.nx+ry*q.ny,ly=rx*p.tx+ry*p.ty;
+        const f=j/m,g=pp[SLOW_PRED?Math.min(pp.length-1,Math.round((t0+t*f)/STEP0)):0],p=g.p; // その瞬間に予測される自機の位置で判定する
+        const rx=x+(x2-x)*f-p.x,ry=y+(y2-y)*f-p.y,lx=rx*g.nx+ry*g.ny,ly=rx*p.tx+ry*p.ty;
         if(Math.hypot(lx-clamp(lx,-8*BS,27*BS),ly-clamp(ly,-24*BS,24*BS))<4)return true; // 本物の当たり判定と同じ形
       }
       x=x2;y=y2;tr-=t;
@@ -2040,7 +2249,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   }
   /* --- 光線の1ステップ（目玉の敵・新ボス共通） --- */
   stepBeams(q){
-    const p=q.p;
+    const p=q.p;this.pp=null; // 自機の予測位置は、このステップで必要になった時に1回だけ作る
     for(let i=this.bul.length-1;i>=0;i--){
       const b=this.bul[i];b.t+=STEP;
       if(b.dy!==undefined){b.dy-=STEP;if(b.dy<=0)this.bul.splice(i,1);continue;} // 銛で消される光線：その場で光って、当たり判定もなく消える
@@ -2058,9 +2267,26 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         if(b.owner)b.owner.emit=b.emit;
       }
       // 壁に当たった点を折れ点として残しながら進む（頭だけ向きが変わり、尾はまだ壁へ向かうのでV字になる）
-      for(let tr=STEP,it=0;tr>1e-6&&it<6;it++){
+      if(b.pp){ // プリズムの中：決まった道すじ（反射点）を速く進む。出口に着いたら、出る向きの速度にもどる
+        let mv=PB_IN*STEP;
+        while(mv>1e-6&&b.pp){
+          const P=b.pp,tp=P.pts[P.i],dd=Math.hypot(tp.x-b.x,tp.y-b.y);
+          if(dd<=mv){b.x=tp.x;b.y=tp.y;mv-=dd;b.h.push({x:b.x,y:b.y});P.i++;if(P.i>=P.pts.length){b.vx=P.dx*b.sp;b.vy=P.dy*b.sp;b.pp=null;b.pd=true;this.sparkE.explode(6,b.x,b.y);}}
+          else{b.x+=(tp.x-b.x)/dd*mv;b.y+=(tp.y-b.y)/dd*mv;mv=0;}
+        }
+      }else for(let tr=STEP,it=0;tr>1e-6&&it<6;it++){
         const w=arRay(b.x,b.y,b.vx,b.vy,3),th=w.t;
         const t=Math.max(0,Math.min(th,tr));
+        if(b.pz&&!b.pd&&!b.pz.gone){ // プリズムに入るか
+          const spd=Math.hypot(b.vx,b.vy)||1,en=prismEnter(b.x,b.y,b.vx/spd,b.vy/spd,t*spd,b.pz);
+          if(en){
+            b.x=en.x;b.y=en.y;b.h.push({x:en.x,y:en.y});
+            const P=prismPath(en.x,en.y,Math.atan2(b.vy,b.vx)+rnd(-0.3,0.3),b.pz,PB_REF); // 入るときに少し曲がる＋10回反射
+            if(P.pts.length<PB_REF+1){b.pd=true;break;} // 道すじが作れなかったとき（角すれすれなど）は、まっすぐ通り抜ける
+            b.pp={pts:P.pts,i:0,dx:P.dx,dy:P.dy};b.vx=b.vy=0;b.pz.glow=1;sfx(1800,700,0.1,0.15,'triangle');
+            break;
+          }
+        }
         b.x+=b.vx*t;b.y+=b.vy*t;tr-=t;
         if(th<=t){const dn=b.vx*w.nx+b.vy*w.ny;b.vx-=2*dn*w.nx;b.vy-=2*dn*w.ny;b.n++;b.h.push({x:b.x,y:b.y});}
       }
@@ -2075,7 +2301,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         acc+=seg;hx=c.x;hy=c.y;
       }
       // 光線全体（折れ線）が自機に触れたらダメージ
-      if(this.inv<=0&&!b.hit){
+      if(this.inv<=0&&!(this.dgR>0)&&!b.hit){ // 回避中（Dodge）は、光線が当たらず素通りする
         const P=b.h.concat([b]);let hit=false,ha=0,hx2=0,hy2=0; // 尾の側から調べるので、最初に触れた点＝光線が自機に入った面
         for(let a=1;a<P.length&&!hit;a++){
           const u=P[a-1],v=P[a],n=Math.ceil(Math.hypot(v.x-u.x,v.y-u.y)/8)||1;
@@ -2090,7 +2316,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
           if(this.over)return;
         }
       }
-      if(this.slowCD<=0&&this.inv<=0&&!b.hit&&(b.vx||b.vy)&&this.beamWillHit(b,q))this.slowT=0.1; // 当たる直前：スローモーション（当たりそうな間は延長される）
+      if(this.slowCD<=0&&this.inv<=0&&!(this.dgR>0)&&!b.hit&&(b.vx||b.vy)&&this.beamWillHit(b,q))this.slowT=0.1; // 当たる直前：スローモーション（当たりそうな間は延長される）
     }
   }
 
@@ -2135,13 +2361,13 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       }
     }
     this.pickFocus();
-    this.stepBeams(q); // 光線は敵の数に関係なくフレームに1回だけ進める（敵が倒れても光線は進み続ける）
+    this.stepBlocks(q);this.stepBeams(q); // 光線は敵の数に関係なくフレームに1回だけ進める（敵が倒れても光線は進み続ける）
   }
   stepOne(q){
     const e=this.e,h=this.h,st=!!h&&h.st==='stuck'&&h.tg===e;
     if(e.type==='boss'){if(e.limp>0)e.limp=Math.max(0,e.limp-STEP);else e.grip=Math.max(0,(e.grip||0)-GRIP_DECAY*STEP);} // 本体の連打ゲージは時間で戻る
     if(e.cool>0){e.cool-=STEP;const k=Math.exp(-3*STEP);e.vx*=k;e.vy*=k;} // 分離したばかりの小さい敵：高熱で光っている間は、動きが止まっていき、攻撃もしない
-    else if(e.type==='boss'){if(e.kind==='eyes')this.eyeBossAI(q,e,st);else if(e.kind==='glass')this.glassBossAI(q,e,st);else this.bossAI(q,e,st);}
+    else if(e.type==='boss'){if(e.kind==='eyes')this.eyeBossAI(q,e,st);else if(e.kind==='prism')this.prismBossAI(q,e,st);else if(e.kind==='glass')this.glassBossAI(q,e,st);else if(e.kind==='iron')this.ironBossAI(q,e,st);else if(e.kind==='ice')this.iceBossAI(q,e,st);else this.bossAI(q,e,st);}
     else if(e.type==='eyes')this.eyesAI(q,e,st);
     else if(e.type==='beamer')this.beamerAI(q,e,st);
     else if(e.type==='clam')this.clamAI(q,e,st);
@@ -2169,9 +2395,9 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     this.stepBody(e,q);
     if(e.dead)return;
     if(e.type==='boss'&&e.sp>0)e.w=0; // 盾の回転攻撃中、本体は回らない
-    if((e.kind==='eyes'&&e.arms.some(a=>a.alive))){e.a=0;e.w=0;} // 新ボスは砲台が残っている間だけ向きを固定（位置は物理で動く）。全部取れたら自由に回る
+    if((e.kind==='eyes'&&e.arms.some(a=>a.alive))||e.kind==='prism'){e.a=0;e.w=0;} // 新ボスは砲台が残っている間だけ向きを固定（位置は物理で動く）。全部取れたら自由に回る
     // 自機に当たったらダメージ（ボスは盾にも当たり判定がある）
-    if(this.inv<=0&&this.shInv<=0&&!this.tutOn&&!(e.cool>0)){
+    if(this.inv<=0&&this.shInv<=0&&!(this.dgR>0)&&!this.tutOn&&!(e.cool>0)){ // 回避中（Dodge）は、敵に触れてもダメージを受けない
       const p=q.p,rx=e.x-p.x,ry=e.y-p.y,lx=rx*q.nx+ry*q.ny,ly=rx*p.tx+ry*p.ty;
       const cx=clamp(lx,-8*BS,27*BS),cy=clamp(ly,-24*BS,24*BS);
       if(Math.hypot(lx-cx,ly-cy)<e.r-3){this.contactHit(q,e);return;}
@@ -2317,6 +2543,131 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   }
 
   /* --- ガラスのボス：ゆっくり迫りながら、玉の一部を膨らませて分離させ、小さい敵を作り続ける（銛が刺さって綱引き中でも続ける） --- */
+  /* --- プリズムのボス：プリズムのまわりをゆっくり回り、目玉は常にプリズムを向く。6発ほど続けて、プリズムへ速い光線を撃つ（光線はプリズムの中で反射して、ランダムな向きに出る） --- */
+  prismBossAI(q,e,st){
+    const pr=e.pr;
+    pr.rot+=PB_ROT*STEP;pr.glow=Math.max(0,pr.glow-3*STEP); // プリズムは銛が刺さっていても回り続ける
+    if(!st){ // 銛が刺さっている間は、軌道へ戻る力も、軌道上を回る動きもなし（引っ張られるまま）
+      e.oa+=e.od*0.22*STEP;
+      const tx=pr.cx+Math.cos(e.oa)*PB_ORB,ty=pr.cy+Math.sin(e.oa)*PB_ORB;
+      e.vx+=((tx-e.x)*3-e.vx*2)*STEP;e.vy+=((ty-e.y)*3-e.vy*2)*STEP; // 軌道へ戻るやわらかい力
+    }
+    e.aimA=Math.atan2(pr.cy-e.y,pr.cx-e.x);
+    if(st){/* 銛が刺さっている間は、溜めも待ち時間も止まる */}
+    else if(e.chg>0){e.chg-=STEP;if(e.chg<=0)this.prismShoot(e);}
+    else{e.fire-=STEP;if(e.fire<=0){if(!(e.vol>0))e.vol=PB_N;e.chg=PB_CHG;}}
+  }
+  prismShoot(e){ // プリズムの中のランダムな点へ向けて光線を1発撃つ（プリズムに入った光線の処理はstepBeams）
+    const pr=e.pr,rr=rnd(0,PB_R*0.5),ra=rnd(0,6.283),a=Math.atan2(pr.cy+Math.sin(ra)*rr-e.y,pr.cx+Math.cos(ra)*rr-e.x),po=EYE_PO*e.r/ER;
+    this.shootBeam(a,e,()=>this.es.includes(e)?{x:e.x+Math.cos(a)*po,y:e.y+Math.sin(a)*po}:null,{sp:PB_SPD,emit:PB_EMIT,col:PB_COL,hc:PB_HIT});
+    const b=this.bul[this.bul.length-1];if(b&&b.owner===e)b.pz=pr;
+    e.vol--;e.fire=e.vol>0?PB_GAP-PB_CHG:PB_WAIT;
+  }
+  /* --- 氷のボス：じわじわ迫りながら、ふわふわついてくる雪の結晶から、太い線のビームを出す（溜め→出る→ゆっくり回る→消える） --- */
+  iceBossAI(q,e,st){
+    const p=q.p,dx=p.x-e.x,dy=p.y-e.y,cr=e.cr;
+    e.gt=(e.gt||0)+STEP;
+    let diff=Math.atan2(dy,dx)-e.a;diff=Math.atan2(Math.sin(diff),Math.cos(diff));
+    const want=clamp(diff*2.2,-1.1,1.1)*1.2*(st?0:1);
+    e.w+=(want-e.w)*Math.min(1,4*STEP);
+    const ac=40*(st?0.3:1)*STEP,aim=this.aimDir(q,e);e.vx+=aim.dx/aim.d*ac;e.vy+=aim.dy/aim.d*ac;
+    const ib=e.ib;
+    e.os+=((ib?0.1:0.7)-e.os)*Math.min(1,3*STEP);e.ob+=e.os*STEP; // 結晶がボスのまわりをさまよう速さ：ビームの間はほぼ止まる
+    const wa=e.ob+Math.sin(e.gt*0.9)*1.1,ds=ICE_ORB+14*Math.sin(e.gt*1.3),tx=e.x+Math.cos(wa)*ds,ty=e.y+Math.sin(wa)*ds+5*Math.sin(e.gt*2.1); // ボスのまわりの、ゆらゆら動く目標の位置
+    if(ib){cr.vx=cr.vy=0;} // ビームの予告から消えるまでの間は、結晶の位置を世界に対して固定する（ボスが動いてもついて行かない）
+    else{
+      cr.vx+=((tx-cr.x)*5-cr.vx*2.4)*STEP;cr.vy+=((ty-cr.y)*5-cr.vy*2.4)*STEP; // やわらかいバネ：少し遅れて、行き過ぎながらついてくる（位置は固定しない）
+      cr.x+=cr.vx*STEP;cr.y+=cr.vy*STEP;const wl=arIn(cr.x,cr.y,14);cr.x=wl.x;cr.y=wl.y; // 壁の外には出ない
+    }
+    cr.a+=(ib?0.15:0.6)*STEP; // 結晶はゆっくり自転する
+    {const tg=ib?(ib.ph===1?1:ib.t/ICE_CHG):0;cr.gl=cr.rv>0?0:tg>=(cr.gl||0)?tg:Math.max(tg,cr.gl-STEP/ICE_FADE);} // 結晶の光の強さ：溜める時は上がり、撃ち終わったらICE_FADE秒かけてゆっくり小さく薄くなる
+    if(cr.pop>0)cr.pop-=STEP;
+    if(cr.rv>0){ // 結晶が砕けている間：ビームは出せない。時間がたつと、その場でパッと蘇る
+      cr.rv-=STEP;
+      if(cr.rv<=0){cr.rv=0;cr.pop=0.45;cr.vx=cr.vy=0;e.iw=Math.max(e.iw,1);this.hitE.explode(18,cr.x,cr.y);pingSfx(0.2,1.2,1);this.softFlash(80,200,235,255,0.3);}
+      else{this.iceFreeze(null);return;}
+    }
+    this.iceFreeze(ib&&ib.ph===1&&ib.t>0.06?ib:null); // ビームが触れたレールの場所が凍っていく（ビームがない間は、凍りかけの場所が仕上がるだけ）
+    if(!ib){e.iw-=STEP;if(e.iw<=0)this.iceStart(e,p);return;}
+    ib.ox=cr.x;ib.oy=cr.y;ib.t+=STEP;
+    if(ib.ph===0){ // 溜め：細い予告線が自機を追い、最後の3割は固定（点滅）
+      if(ib.t<ICE_CHG*0.7){let d=Math.atan2(p.y-ib.oy,p.x-ib.ox)-ib.ang;d=Math.atan2(Math.sin(d),Math.cos(d));ib.ang+=d*Math.min(1,5*STEP);}
+      if(ib.t>=ICE_CHG){ib.ph=1;ib.t=0;this.cameras.main.shake(220,0.01);pingSfx(0.2,0.8,1.2);sfx(180,90,0.6,0.18,'sine');}
+    }else{ // 出ている間：線がゆっくり回る。触れたらダメージ
+      ib.ang+=ib.dir*ICE_ROT*STEP;
+      if(this.inv<=0&&!(this.dgR>0)){
+        const c=Math.cos(ib.ang),s=Math.sin(ib.ang),rx=p.x-ib.ox,ry=p.y-ib.oy,t=rx*c+ry*s,dist=t<0?Math.hypot(rx,ry):Math.abs(-rx*s+ry*c);
+        if(dist<ICE_W/2+10*BS){this.hurt(q);if(this.over)return;e.ib=null;e.iw=rnd(ICE_WAIT[0],ICE_WAIT[1]);return;} // 自機に当たったら、その時点でビームを終わらせる
+      }
+      if(ib.t>=ICE_FIRE){e.ib=null;e.iw=rnd(ICE_WAIT[0],ICE_WAIT[1]);}
+    }
+  }
+  iceCrystalBreak(e,tx,ty){ // 結晶が砕ける：撃っている途中ならビームも消える。銛は刺さらず弾かれる。ICE_REV秒後に蘇る
+    const cr=e.cr,h=this.h,cam=this.cameras.main;
+    cr.rv=ICE_REV;e.ib=null;e.iw=rnd(ICE_WAIT[0],ICE_WAIT[1]);
+    for(let i=0;i<36;i++){const a=rnd(0,6.283),sp=rnd(180,700),cc=Math.random(),r0=rnd(0,ICE_TIP*0.8);this.shards.push({x:cr.x+Math.cos(a)*r0,y:cr.y+Math.sin(a)*r0,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-22,22),t:0,c:cc<0.5?0xffffff:cc<0.8?0xcfe8ff:0x66e0ff});}
+    this.hitE.explode(20,cr.x,cr.y);cam.shake(160,0.01);this.softFlash(80,200,235,255,0.35);
+    if(!playSnd('glassbreak',0.8,rnd(1.4,1.7)))sfx(3000,900,0.15,0.3,'triangle');
+    if(h){const sv=Math.min(this.spd,SPD_SAFE);h.dvx=-h.ux*sv*0.2;h.dvy=-h.uy*sv*0.2;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);h.st='drift';h.trail.length=0;} // 銛は刺さらず、その場で漂う
+  }
+  iceStart(e,p){ // 攻撃開始：結晶の位置から、自機の方へ予告線を出す
+    const cr=e.cr;
+    e.ib={ph:0,t:0,ang:Math.atan2(p.y-cr.y,p.x-cr.x),dir:Math.random()<0.5?1:-1,ox:cr.x,oy:cr.y};
+    sfx(300,1100,ICE_CHG,0.1,'sine');
+  }
+  /* --- 鉄のボス：じわじわ迫りながら、ガキンガキンと鉄の塊を上に作り、塊は振動してからドスンと落ちて壊れる --- */
+  ironBossAI(q,e,st){
+    const dx=q.p.x-e.x,dy=q.p.y-e.y;
+    e.gt=(e.gt||0)+STEP;e.ck=Math.max(0,(e.ck||0)-4*STEP);
+    let diff=Math.atan2(dy,dx)-e.a;diff=Math.atan2(Math.sin(diff),Math.cos(diff));
+    const want=clamp(diff*2.2,-1.1,1.1)*1.2*(st?0:1);
+    e.w+=(want-e.w)*Math.min(1,4*STEP);
+    const ac=45*(st?0.3:1)*STEP,aim=this.aimDir(q,e);e.vx+=aim.dx/aim.d*ac;e.vy+=aim.dy/aim.d*ac;
+    if(e.ibN>0){e.ibCd-=STEP;if(e.ibCd<=0){this.makeBlock(e,q);e.ibN--;e.ibCd=IB_GAP;if(e.ibN<=0)e.iw=rnd(IB_WAIT[0],IB_WAIT[1]);}}
+    else{e.iw-=STEP;if(e.iw<=0){e.ibN=IB_N;e.ibCd=0.3;}}
+  }
+  makeBlock(e,q){ // 画面の上の壁ぎわに、鉄の塊を1個作る（6割は自機の真上あたり）。落ちる向き＝いまの画面の下向き
+    const cam=this.cameras.main,ga=Math.PI/2-(cam.rotation||0),dx=Math.cos(ga),dy=Math.sin(ga),hx=-dy,hy=dx,hb=rnd(IB_HB[0],IB_HB[1]),cx=AR.sx,cy=AR.sy,p=q.p;
+    const wL=arRay(cx,cy,hx,hy,hb).t,wR=arRay(cx,cy,-hx,-hy,hb).t;
+    let off=rnd(-wR,wL)*0.9;
+    if(Math.random()<0.6)off=clamp((p.x-cx)*hx+(p.y-cy)*hy+rnd(-120,120),-wR*0.9,wL*0.9);
+    const bx=cx+hx*off,by=cy+hy*off,tu=arRay(bx,by,-dx,-dy,hb).t,sx=bx-dx*tu,sy=by-dy*tu,dist=arRay(sx,sy,dx,dy,hb).t;
+    this.blk=this.blk||[];
+    this.blk.push({fc:ibFacets(hb,ga-Math.PI/2),x:sx,y:sy,a:ga-Math.PI/2,hb,dx,dy,hx,hy,dist,tr:0,lx:sx+dx*dist,ly:sy+dy*dist,st:0,t:0,v:0,jx:0,jy:0,sn:0,hit:false});
+    e.ck=1;this.sparkE.explode(10,sx,sy);this.hitE.explode(6,sx,sy);this.cameras.main.shake(90,0.006);
+    clashSfx(1); // ガシャン
+  }
+  stepBlocks(q){ // 塊：作られる(0)→振動して予告(1)→落ちる(2)→壊れる
+    const bl=this.blk;if(!bl||!bl.length)return;
+    if(!this.es.some(x=>x.kind==='iron'&&!x.dead)){bl.length=0;return;}
+    const p=q.p;
+    for(let i=bl.length-1;i>=0;i--){
+      const b=bl[i];b.t+=STEP;
+      if(b.st===0){if(b.t>=IB_FORM){b.st=1;b.t=0;}}
+      else if(b.st===1){
+        const k=b.t/IB_SHAKE,am=2+7*k;b.jx=rnd(-am,am);b.jy=rnd(-am,am);
+        b.sn-=STEP;if(b.sn<=0){b.sn=0.09;sfx(rnd(160,260),100,0.07,0.05+0.05*k,'triangle');}
+        if(b.t>=IB_SHAKE){b.st=2;b.t=0;b.v=0;b.jx=b.jy=0;}
+      }else{
+        b.v=Math.min(IB_VMAX,b.v+IB_ACC*STEP);const d=Math.min(b.v*STEP,b.dist-b.tr);b.tr+=d;b.x+=b.dx*d;b.y+=b.dy*d;
+        if(!b.hit&&this.inv<=0&&!(this.dgR>0)){ // 落ちている間に自機に触れたらダメージ
+          const rx=p.x-b.x,ry=p.y-b.y,c=Math.cos(b.a),s=Math.sin(b.a),lx=rx*c+ry*s,ly=-rx*s+ry*c;
+          if(Math.hypot(lx-clamp(lx,-b.hb,b.hb),ly-clamp(ly,-b.hb,b.hb))<16*BS){b.hit=true;this.hurt(q);if(this.over)return;}
+        }
+        if(b.tr>=b.dist-0.01){this.landBlock(b);bl.splice(i,1);}
+      }
+    }
+  }
+  landBlock(b){ // ドスン：壁にぶつかって、鉄の欠片になって砕ける
+    this.cameras.main.shake(260,0.02);
+    sfx(90,40,0.42,0.38,'sine');sfx(200,70,0.22,0.16,'triangle');pingSfx(0.07,0.6,0.5);
+    this.imps.push({x:b.x,y:b.y,t:0,s:1.1,c:0xcfd6de});this.hitE.explode(14,b.x,b.y);this.sparkE.explode(8,b.x,b.y);
+    const cs=[0xcfd6de,0xffffff,0x8a94a0,0x4a525b];
+    for(let i=0;i<36;i++){
+      const a=Math.atan2(-b.dy,-b.dx)+rnd(-1.3,1.3),sp=rnd(180,620),ox=rnd(-b.hb,b.hb),oy=rnd(-b.hb,b.hb);
+      this.shards.push({x:b.x+b.hx*ox+b.dx*oy,y:b.y+b.hy*ox+b.dy*oy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-22,22),t:0,c:cs[Math.floor(Math.random()*cs.length)]});
+    }
+  }
   glassBossAI(q,e,st){
     const dx=q.p.x-e.x,dy=q.p.y-e.y;
     e.gt=(e.gt||0)+STEP;e.sj=Math.max(0,(e.sj||0)-3*STEP);
@@ -2433,6 +2784,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   }
   probeE(tx,ty,e){
     if(e.dead)return false;
+    if(e.kind==='ice'&&e.cr&&!(e.cr.rv>0)&&Math.hypot(tx-e.cr.x,ty-e.cr.y)<ICE_TIP+6){this.iceCrystalBreak(e,tx,ty);return true;} // 氷のボスの結晶：銛が当たると砕ける（本体より先に判定）
     if(e.type==='clam'&&e.shell){ // 貝：シールドには弾かれる。割れて見えている本体にだけ刺さり、刺さるとシールドが砕け散る
       const c=Math.cos(e.a),sn=Math.sin(e.a),dx=tx-e.x,dy=ty-e.y,lx=dx*c+dy*sn,ly=-dx*sn+dy*c;
       if(Math.abs(lx)>2*CL_S+10||Math.abs(ly)>2*CL_S+10)return false;
@@ -2816,9 +3168,29 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   step(){
     if(this.over||this.pickOn)return;
     const inx=this.tutOn?(this.tp==='run'?Math.max(0,this.demo?this.demoMv:inputX()):0):inputX(); // チュートリアル中は、最後の「移動」まで自機は動かせない
-    this.vel+=(inx*SPEED*this.mv-this.vel)*(1-Math.exp(-(inx*this.vel<0?TURN_K:14)*STEP)); // 今の動きと逆向きに入力したときだけ、追従を速くする（切り返しブースト）
-    this.s+=this.vel*STEP;
+    { // Dodge：スタミナの回復と光・残像の寿命・発動
+      const dq=(dgQ&&performance.now()-dgQT<200)?dgQ:0;dgQ=0; // 入力は、取れなかった（スタミナなし・強化なし）時もここで消す
+      for(let i=this.dgT.length-1;i>=0;i--){this.dgT[i]-=STEP;if(this.dgT[i]<=0){this.dgT.splice(i,1);this.dgPop[this.dg-this.dgT.length-1]=DG_POP;sfx(1400,2600,0.1,0.14,'sine');}} // 回復：1つ戻るたびに、そのマスがパッと光る
+      for(let i=0;i<this.dgPop.length;i++)if(this.dgPop[i]>0)this.dgPop[i]-=STEP;
+      if(this.afi.length){for(const a of this.afi)a.t+=STEP;if(this.afi[0].t>=DG_AFT)this.afi=this.afi.filter(a=>a.t<DG_AFT);}
+      if(dq&&this.dg>0&&this.dgR<=0&&this.dg-this.dgT.length>0&&!this.tutOn){ // 発動：スタミナを1つ使い（回復まで5秒）、押した向きへダッシュ
+        this.dgT.push(DG_REC);this.dgR=DG_DIST;this.dgD=dq;this.dgAc=0;this.afi.push({s:this.s,t:0});
+        dodgeSfx(); // 風切り音
+      }
+    }
+    const s0=this.s;
+    if(this.dgR>0){ // Dodge中：一定の速さで、一定の距離だけ、押した向きへ走る（この間はダメージを受けない。通常の移動の追従は止まる）
+      const d=Math.min(this.dgR,DG_SPD*STEP);
+      this.s+=this.dgD*d;this.dgR-=d;this.dgAc+=d;this.vel=this.dgD*DG_SPD;
+      if(this.dgAc>=14){this.dgAc-=14;this.afi.push({s:this.s,t:0});} // 残像：走りながら一定の間隔で残す
+      if(this.dgR<=1e-6){this.dgR=0;this.vel=inx*SPEED*this.mv;} // 終わったら通常の動きへ（今の入力の最高速度から。押していなければ止まる＝距離がのびない）
+    }else{
+      this.vel+=(inx*SPEED*this.mv-this.vel)*(1-Math.exp(-(inx*this.vel<0?TURN_K:14)*STEP)); // 今の動きと逆向きに入力したときだけ、追従を速くする（切り返しブースト）
+      this.s+=this.vel*STEP;
+    }
     if(RAIL.open){if(this.s<0){this.s=0;if(this.vel<0)this.vel=0;}else if(this.s>L){this.s=L;if(this.vel>0)this.vel=0;}}
+    if(this.fz)this.iceBlock(s0); // 凍った場所は通れない
+    if(this.dgR>0&&RAIL.open&&(this.s<=0||this.s>=L)){this.dgR=0;this.vel=0;} // レールの端に着いたら、ダッシュはそこで終わり
     this.cool-=STEP;this.hcool-=STEP;this.yankC-=STEP;if(this.ld)for(let i=0;i<3;i++)if(this.ld[i]>0)this.ld[i]-=STEP;
     this.inv=Math.max(0,this.inv-STEP);this.shInv=Math.max(0,this.shInv-STEP);this.shA+=PSH_W*STEP;
     if(this.comboT>0){this.comboT-=STEP;if(this.cbi)this.cbi.style.transform='scaleX('+Math.max(0,this.comboT/1.4)+')';if(this.comboT<=0){this.combo=0;comboEl.style.opacity=0;}}
@@ -2878,11 +3250,11 @@ harpoonRaw(g,len,bomb,fw){ // 元の大きさ(BS=1)の銛の形。bomb＝先端�
   }
 
   drawTurret(g,x,y,k,ang,gl,rot=0,al=1,kind='eyes'){ // 目玉の敵の姿（目玉の敵・ボスの砲台・ちぎれた砲台で共通）。ang＝黒目の向き／gl＝光の膨らみ（負なら停止＝光なし）／rot＝回転
-    const pal=EPAL[kind]||EPAL.eyes,dead=gl<0,ec=kind==='beamer'?BM_COL:EYE_COL,hc=kind==='beamer'?BM_HIT:0xe6c4ff;
+    const pal=EPAL[kind]||EPAL.eyes,dead=gl<0,ec=kind==='beamer'?BM_COL:kind==='prism'?PB_COL:EYE_COL,hc=kind==='beamer'?BM_HIT:kind==='prism'?PB_HIT:0xe6c4ff;
     g.save();g.translateCanvas(x,y);g.rotateCanvas(rot);g.scaleCanvas(k,k);
     g.fillStyle(pal.c1,al);
-    for(let i=0;i<pal.n;i++){const a=i*Math.PI*2/pal.n,c=Math.cos(a),s=Math.sin(a),r0=ER-4;g.fillTriangle(c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11));g.lineStyle(1.2,0xffffff,0.5*al);g.strokeTriangle(c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11));}
-    g.fillStyle(pal.c0,al);g.fillCircle(0,0,ER);glassOv(g,ER,pal,GLASS_ROT+rot,al);
+    for(let i=0;i<pal.n;i++){const a=i*Math.PI*2/pal.n,c=Math.cos(a),s=Math.sin(a),r0=ER-4;crystalSpike(g,pal,c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11),a,GLASS_ROT+rot,al);}
+    g.fillStyle(pal.c0,al);g.fillCircle(0,0,ER);glassOv(g,ER,pal,GLASS_ROT+rot,al,ER*k);
     g.lineStyle(3,pal.c2,al);g.strokeCircle(0,0,ER);
     const o=EYE_PO,px=Math.cos(ang)*o,py=Math.sin(ang)*o,lit=dead?0:Math.max(0,gl);
     if(!dead){
@@ -2893,6 +3265,16 @@ harpoonRaw(g,len,bomb,fw){ // 元の大きさ(BS=1)の銛の形。bomb＝先端�
     g.fillStyle(dead?0x4a3a66:m(0.75*lit),al);g.fillCircle(px,py,EYE_PR);
     if(lit>0.02){g.fillStyle(0xffffff,0.85*lit*al);g.fillCircle(px,py,EYE_PR*0.55*lit);} // 黒目の芯が白く光る
     g.restore();
+  }
+  drawPrism(g,pz){ // 真ん中に固定された、透明な三角形のプリズム：3つの面を世界の光で照らし、光線が入ると光る
+    const v=prismTri(pz),gl=pz.glow||0;
+    for(let k=0;k<3;k++){
+      const a=v[k],b=v[(k+1)%3],lt=facetLit(Math.atan2((a.y+b.y)/2-pz.cy,(a.x+b.x)/2-pz.cx),0.6,0);
+      g.fillStyle(0xbfeaff,Math.min(0.8,0.07+0.16*lt[0]+0.4*lt[1]+0.2*gl));g.fillTriangle(pz.cx,pz.cy,a.x,a.y,b.x,b.y);
+    }
+    g.lineStyle(1.5,0xdff6ff,0.3+0.3*gl);
+    const w=v.map(p=>({x:pz.cx+(p.x-pz.cx)*0.5,y:pz.cy+(p.y-pz.cy)*0.5}));g.strokePoints(w,true);
+    g.lineStyle(3,0xdff6ff,0.7+0.3*gl);g.strokePoints(v,true);
   }
   drawTurrets(g,e,q){ // 新ボスの左右の砲台（本体の座標系。向きは固定）
     for(let i=0;i<e.arms.length;i++){
@@ -2947,12 +3329,184 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
     g.fillStyle(0xffa94a,0.95);g.fillPoints(mk(0.68,1.3),true);
     g.fillStyle(0xffe6a0,0.95);g.fillPoints(mk(0.34,2.6),true);
   }
+  mkIce(){ // 凍る壁の準備：レール（自機の通り道）を短い区画に区切り、その区画ごとに、本体と同じ半透明の三角形の面でできた氷の帯を作っておく（輪郭がでこぼこになるよう、点を少しずつずらす）
+    const nb=Math.max(8,Math.round(L/16)),BIN=L/nb,cx=AR.sx,cy=AR.sy,op=RAIL.open,rows=op?[36,12,-12,-36]:[26,4.7,-16.7,-38],nodes=[],mid=[],tris=[],pc={c0:0x9fd0f0,c2:0xffffff};
+    for(let k=0;k<=nb;k++){
+      if(!op&&k===nb){nodes.push(nodes[0]);continue;}
+      const P=at(k*BIN);let nx=P.ty,ny=-P.tx;
+      if(!op&&((P.x-cx)*nx+(P.y-cy)*ny)<0){nx=-nx;ny=-ny;} // 外（壁）の側を＋にする
+      nodes.push(rows.map((d,j)=>{const ed=j===0||j===3,jn=(Math.random()-0.5)*(ed?14:8),jt=(Math.random()-0.5)*(ed?8:6);return{x:P.x+nx*(d+jn)+P.tx*jt,y:P.y+ny*(d+jn)+P.ty*jt};}));
+    }
+    for(let k=0;k<nb;k++){
+      mid.push(at((k+0.5)*BIN));const arr=[];
+      for(let j=0;j<3;j++){
+        const a=nodes[k][j],b=nodes[k+1][j],c=nodes[k][j+1],d=nodes[k+1][j+1],ia=[k,j],ib=[k+1,j],ic=[k,j+1],id=[k+1,j+1],T=Math.random()<0.5?[[a,b,d],[a,d,c]]:[[a,b,c],[b,d,c]],TI=T[0][2]===d&&T[0][1]===b&&T[1][2]===c&&T[1][1]===d?[[ia,ib,id],[ia,id,ic]]:[[ia,ib,ic],[ib,id,ic]]; // TI＝各三角形の頂点が「どの列・どの段」の点か（端を丸める時に使う）
+        for(const [ti,t] of T.map((t,i)=>[TI[i],t])){
+          const an=Math.random()*6.283,tl=0.15+0.8*Math.random(),lt=facetLit(an,tl,0),dd=lt[0];let col=lerpC(pc.c0,lerpC(pc.c0,pc.c2,Math.min(1,dd*1.1)),0.3+0.5*dd);if(lt[1]>0.04)col=lerpC(col,0xffffff,Math.min(0.85,lt[1]));
+          arr.push({v:[t[0].x,t[0].y,t[1].x,t[1].y,t[2].x,t[2].y],id:ti,col});
+        }
+      }
+      tris.push(arr);
+    }
+    return{nb,BIN,mid,tris,nodes,rows,age:new Float32Array(nb),snd:0,f:new Float32Array(nb),cnt:0,cap:Math.floor(nb*0.5),bin:s=>{if(op)return Math.max(0,Math.min(nb-1,Math.floor(s/BIN)));const m=((s%L)+L)%L;return Math.min(nb-1,Math.floor(m/BIN));}}; // cap＝凍る区画の上限（レールの半分まで）
+  }
+  iceFreeze(ib){ // ビームの線に触れたレールの区画を凍らせる（f＝凍り具合0〜1。0.6以上で通れなくなる）
+    const fz=this.fz;if(!fz)return;
+    fz.snd-=STEP;
+    const c=ib?Math.cos(ib.ang):0,sn=ib?Math.sin(ib.ang):0,thr=ICE_W*0.5+8;let bd=1e9;
+    if(ib)ib.hv=false;
+    for(let k=0;k<fz.nb;k++){
+      let tc=false;
+      if(ib){const P=fz.mid[k],rx=P.x-ib.ox,ry=P.y-ib.oy;if(rx*c+ry*sn>0){const d=Math.abs(-rx*sn+ry*c);if(d<thr){tc=true;if(d<bd){bd=d;ib.hx=P.x;ib.hy=P.y;ib.hv=true;}}}}
+      if(fz.f[k]>0){ // 凍ってからの時間：ICE_LIFE秒たつと、その区画は壊れる（凍った順に、少しずつ壊れていく）
+        fz.age[k]+=STEP;
+        if(fz.age[k]>=ICE_LIFE){
+          const P=fz.mid[k];
+          for(let i=0;i<5;i++){const an=rnd(0,6.283),sp=rnd(120,420),cc=Math.random();this.shards.push({x:P.x+rnd(-8,8),y:P.y+rnd(-8,8),vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,a:rnd(0,6.283),w:rnd(-22,22),t:0,c:cc<0.5?0xffffff:cc<0.8?0xcfe8ff:0x66e0ff});}
+          fz.f[k]=0;fz.age[k]=0;fz.cnt=Math.max(0,fz.cnt-1);
+          if(fz.snd<=0){fz.snd=0.12;if(!playSnd('glassbreak',0.4,rnd(1.7,2.0)))sfx(3400,1200,0.1,0.2,'triangle');}
+        }
+      }
+      if(fz.f[k]===0&&tc&&fz.cnt<fz.cap){fz.cnt++;fz.f[k]=0.0001;fz.age[k]=0;}
+      if(fz.f[k]>0&&fz.f[k]<1)fz.f[k]=Math.min(1,fz.f[k]+8*STEP);
+    }
+  }
+  iceBlock(s0){ // 凍った場所には入れない：凍った区画に入ろうとしたら、手前の境目で止める。凍る時に中にいたら、近い方の外へ出す
+    const fz=this.fz;if(!fz)return;
+    if(!this.es.some(x=>x.kind==='ice'&&!x.dead)){this.fz=null;return;}
+    const fr=s=>fz.f[fz.bin(s)]>=0.6;
+    if(!fr(this.s))return;
+    if(!fr(s0)){let a=s0,b=this.s;for(let i=0;i<8;i++){const m=(a+b)/2;if(fr(m))b=m;else a=m;}this.s=a;}
+    else{let best=null;for(let d=fz.BIN;d<=L/2&&best===null;d+=fz.BIN)for(const sg of[1,-1]){const t=this.s+sg*d;if(RAIL.open&&(t<0||t>L))continue;if(!fr(t)){best=t;break;}}this.s=best!==null?best:s0;}
+    this.vel=0;if(this.dgR>0)this.dgR=0;
+  }
+  iceBreak(x,y){ // ボスが壁にぶつかった場所のまわりの氷を壊す（凍った区画を元に戻し、また凍らせられるように数も減らす）。壊した所に隣り合う残りが ICE_MINLEN 未満の短い範囲なら、そこも一緒に壊す。ガラスの欠片が散る
+    const fz=this.fz;if(!fz)return;
+    const nb=fz.nb,br=new Uint8Array(nb);let n=0;
+    const brk=k=>{
+      const P=fz.mid[k];
+      for(let i=0;i<5;i++){const a=rnd(0,6.283),sp=rnd(150,520),cc=Math.random();this.shards.push({x:P.x+rnd(-8,8),y:P.y+rnd(-8,8),vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-22,22),t:0,c:cc<0.5?0xffffff:cc<0.8?0xcfe8ff:0x66e0ff});}
+      fz.f[k]=0;fz.cnt=Math.max(0,fz.cnt-1);br[k]=1;n++;
+    };
+    for(let k=0;k<nb;k++)if(fz.f[k]>0&&Math.hypot(fz.mid[k].x-x,fz.mid[k].y-y)<=ICE_BRK)brk(k);
+    if(n>0){ // 壊れた所に隣り合って残った氷の連なりを数えて、短すぎたら壊す
+      const nbr=k=>{const a=RAIL.open&&k===0?-1:(k+nb-1)%nb,b=RAIL.open&&k===nb-1?-1:(k+1)%nb;return[a,b];};
+      const seen=new Uint8Array(nb),B0=n;
+      for(let k=0;k<nb;k++){
+        if(fz.f[k]<=0||seen[k])continue;
+        const run=[];let st=k; // 連なりの先頭まで戻る（ぐるっと一周つながっている時はそのまま）
+        for(let g=0;g<nb;g++){const a=nbr(st)[0];if(a<0||fz.f[a]<=0||a===k)break;st=a;}
+        let c=st;for(let g=0;g<nb;g++){run.push(c);seen[c]=1;const b=nbr(c)[1];if(b<0||fz.f[b]<=0||b===st)break;c=b;}
+        if(run.length===nb)continue; // 一周すべて凍っている：端がない
+        const e0=nbr(run[0])[0],e1=nbr(run[run.length-1])[1];
+        if(run.length*fz.BIN<ICE_MINLEN&&((e0>=0&&br[e0])||(e1>=0&&br[e1])))run.forEach(brk);
+      }
+    }
+    if(n>0)if(!playSnd('glassbreak',0.8,rnd(1.7,2.0)))sfx(3400,1200,0.12,0.3,'triangle'); // 敵が砕ける音を高くしたもの
+  }
+  drawIceWall(g){ // 凍った壁：本体と同じ、半透明の三角形の面の集まり（輪郭はでこぼこ）。凍った区間の横の端は、角を内側へ寄せて丸くする
+    const fz=this.fz;if(!fz)return;
+    const nb=fz.nb,rw=fz.rows,cen=(rw[0]+rw[3])/2,hf=Math.abs(rw[0]-rw[3])/2,on=k=>{if(RAIL.open&&(k<0||k>=nb))return false;return fz.f[(k+nb)%nb]>=0.03;};
+    const pt=(col,j,k,sE,eE)=>{ // 頂点（col列・j段）の位置：端の列なら、段ごとに隣の列のほうへ寄せる（外側の段ほど大きく寄せる＝半円っぽい端）
+      const A=fz.nodes[col][j],isS=sE&&col===k,isE=eE&&col===k+1;
+      if(!isS&&!isE)return A;
+      const u=Math.min(1,Math.abs(rw[j]-cen)/hf),fr=(1-Math.sqrt(1-u*u))*((sE&&eE)?0.45:0.9),B=fz.nodes[isS?k+1:k][j];
+      return{x:A.x+(B.x-A.x)*fr,y:A.y+(B.y-A.y)*fr};
+    };
+    for(let k=0;k<nb;k++){
+      const f=fz.f[k];if(f<0.03)continue;
+      const sE=!on(k-1),eE=!on(k+1);
+      for(const t of fz.tris[k]){
+        const a=pt(t.id[0][0],t.id[0][1],k,sE,eE),b=pt(t.id[1][0],t.id[1][1],k,sE,eE),c=pt(t.id[2][0],t.id[2][1],k,sE,eE);
+        g.fillStyle(t.col,0.55*f);g.fillTriangle(a.x,a.y,b.x,b.y,c.x,c.y);
+      }
+    }
+  }
+  drawIce(g,e){ // 氷のボスの結晶（雪の花）とビーム（世界の座標）
+    const ib=e.ib,cr=e.cr,pc={c0:0x8fc4e8,c2:0xf2fbff};
+    if(ib){
+      const c=Math.cos(ib.ang),s=Math.sin(ib.ang),fx=ib.ox+c*ICE_FAR,fy=ib.oy+s*ICE_FAR;
+      if(ib.ph===0){ // 予告：細い線（固定されたら点滅）
+        const lk=ib.t>=ICE_CHG*0.7;
+        g.lineStyle(lk?3:2,0xbfeaff,lk?0.55+0.45*(Math.floor(ib.t*30)%2):0.3);g.lineBetween(ib.ox,ib.oy,fx,fy);
+      }else{ // 太いビーム：線のように、先まで一瞬で届く。加算合成の光を何枚も重ねて、強く光らせる
+        const u=ib.t/ICE_FIRE,ws=Math.min(1,ib.t/0.08)*(u>0.9?(1-u)/0.1:1),fl=1+0.08*Math.sin(ib.t*37)+0.05*Math.sin(ib.t*91),w=ICE_W*ws*fl,G=this.glow;
+        for(const[m,al]of[[6,0.05],[4,0.08],[2.6,0.12],[1.7,0.2]]){G.lineStyle(w*m,0x7fd0ff,al);G.lineBetween(ib.ox,ib.oy,fx,fy);}
+        G.lineStyle(w*1.15,0xcfeeff,0.45);G.lineBetween(ib.ox,ib.oy,fx,fy);
+        G.lineStyle(w*0.5,0xffffff,0.8);G.lineBetween(ib.ox,ib.oy,fx,fy);
+        g.lineStyle(w*1.7,0x9fdcff,0.22);g.lineBetween(ib.ox,ib.oy,fx,fy);
+        g.lineStyle(w,0xdff4ff,0.85);g.lineBetween(ib.ox,ib.oy,fx,fy);
+        g.lineStyle(w*0.42,0xffffff,1);g.lineBetween(ib.ox,ib.oy,fx,fy);
+        G.fillStyle(0xbfeaff,0.3*ws);G.fillCircle(ib.ox,ib.oy,w*1.4);G.fillStyle(0xffffff,0.45*ws);G.fillCircle(ib.ox,ib.oy,w*0.7); // 出どころの光
+        if(ib.hv){G.fillStyle(0x9fdcff,0.18*ws);G.fillCircle(ib.hx,ib.hy,w*1.9);G.fillStyle(0xcfeeff,0.3*ws);G.fillCircle(ib.hx,ib.hy,w);G.fillStyle(0xffffff,0.5*ws);G.fillCircle(ib.hx,ib.hy,w*0.45);} // 壁に当たった所の光
+      }
+    }
+    if(cr.rv>0)return; // 結晶が砕けている間は何も描かない
+    const gl=cr.gl||0,L=ICE_TIP;
+    const sc=(1+0.7*gl)*(ib&&ib.ph===1?1+0.06*Math.sin(ib.t*40):1)*(cr.pop>0?1-0.85*cr.pop/0.45:1); // ビームを撃つ時：結晶が大きくなり、撃っている間は小刻みに脈打つ
+    if(gl>0){ // 結晶のまわりの光（加算合成）：溜めるほど大きく明るく、撃っている間は最大
+      const G=this.glow,R0=L*sc;
+      G.fillStyle(0x7fd0ff,0.1*gl);G.fillCircle(cr.x,cr.y,R0*4.2);
+      G.fillStyle(0x9fdcff,0.16*gl);G.fillCircle(cr.x,cr.y,R0*2.8);
+      G.fillStyle(0xcfeeff,0.26*gl);G.fillCircle(cr.x,cr.y,R0*1.7);
+      G.fillStyle(0xffffff,0.4*gl);G.fillCircle(cr.x,cr.y,R0*0.8);
+    }
+    g.save();g.translateCanvas(cr.x,cr.y);g.rotateCanvas(cr.a);g.scaleCanvas(sc,sc);
+    g.fillStyle(0xbfeaff,0.16+0.3*gl);g.fillCircle(0,0,L*1.15+14*gl);
+    const arm=(w,col,al)=>{ // 雪の花：6本の腕と、それぞれの枝
+      g.lineStyle(w,col,al);
+      for(let k=0;k<6;k++){
+        const a=k*Math.PI/3,c=Math.cos(a),s=Math.sin(a);
+        g.lineBetween(0,0,c*L,s*L);
+        for(const f of[0.45,0.72]){
+          const bx=c*L*f,by=s*L*f,bl=L*(f<0.6?0.38:0.24);
+          for(const sg of[-1,1]){const ba=a+sg*Math.PI/3;g.lineBetween(bx,by,bx+Math.cos(ba)*bl,by+Math.sin(ba)*bl);}
+        }
+      }
+    };
+    arm(5,0x9fdcff,0.45);arm(2.4,0xffffff,1);
+    for(let k=0;k<6;k++){ // 真ん中の六角形：6枚の面を世界の光で照らす
+      const a0=k*Math.PI/3,a1=a0+Math.PI/3,R=L*0.3,lt=facetLit(a0+Math.PI/6,0.6,cr.a),d=lt[0];
+      let col=lerpC(pc.c0,lerpC(pc.c0,pc.c2,Math.min(1,d*1.1)),0.3+0.5*d);if(lt[1]>0.04)col=lerpC(col,0xffffff,Math.min(0.85,lt[1]));
+      g.fillStyle(col,1);g.fillTriangle(0,0,Math.cos(a0)*R,Math.sin(a0)*R,Math.cos(a1)*R,Math.sin(a1)*R);
+    }
+    g.lineStyle(1.5,0xffffff,0.9);g.strokeCircle(0,0,L*0.3);
+    if(gl>0){g.fillStyle(0xffffff,0.5*gl);g.fillCircle(0,0,5+6*gl);}
+    g.restore();
+  }
+  drawBlocks(g){ // 鉄の塊と、落ちる場所の予告。塊＝角が斜めに削れた正方形。中身は本体と同じ（ガラス風の面・輪郭・内側の輪）で、枠はない
+    const bl=this.blk;if(!bl||!bl.length||!this.es.length)return;
+    const oct=h=>{const c=h*0.3;return[{x:-h+c,y:-h},{x:h-c,y:-h},{x:h,y:-h+c},{x:h,y:h-c},{x:h-c,y:h},{x:-h+c,y:h},{x:-h,y:h-c},{x:-h,y:-h+c}];},pal=EPAL.iboss;
+    for(const b of bl){
+      const h=b.hb,pts=oct(h);
+      if(b.st>=1){ // 着地点の予告（赤い形と線）
+        const al=b.st===1?0.25+0.35*(0.5+0.5*Math.sin(b.t*30)):0.7;
+        g.save();g.translateCanvas(b.lx,b.ly);g.rotateCanvas(b.a);
+        g.fillStyle(0xff3355,al*0.18);g.fillPoints(pts,true);g.lineStyle(3,0xff3355,al);g.strokePoints(pts,true);g.restore();
+        g.lineStyle(2,0xff3355,al*0.5);g.lineBetween(b.x,b.y,b.lx,b.ly);
+      }
+      if(b.st===2&&b.v>200){ // 落ちる筋
+        const ln=Math.min(90,b.v*0.06);
+        for(let j=-1;j<=1;j++){const ox=b.x+b.hx*j*h*0.6,oy=b.y+b.hy*j*h*0.6;g.lineStyle(3,0xdfe5ec,0.25);g.lineBetween(ox,oy,ox-b.dx*ln,oy-b.dy*ln);}
+      }
+      let sc=1,fl=0;
+      if(b.st===0){const u=Math.min(1,b.t/IB_FORM);sc=0.15+0.85*(1-Math.pow(1-u,3))+0.08*Math.sin(u*Math.PI);fl=(1-u)*0.8;}
+      g.save();g.translateCanvas(b.x+b.jx,b.y+b.jy);g.rotateCanvas(b.a);g.scaleCanvas(sc,sc);
+      g.fillStyle(pal.c0,1);g.fillPoints(pts,true); // 下地（角の削れた正方形）
+      for(const f of b.fc){g.fillStyle(f.col,1);g.fillTriangle(f.v[0],f.v[1],f.v[2],f.v[3],f.v[4],f.v[5]);} // 本体と同じガラス風の面（角まで全体にランダムに並ぶ）
+      g.lineStyle(1.5,0xffffff,0.4);g.strokePoints(oct(h-1),true);
+      g.lineStyle(4,pal.c2,1);g.strokePoints(pts,true); // 輪郭
+      if(b.st===1){g.fillStyle(0xff3355,0.1+0.25*(b.t/IB_SHAKE)*(0.5+0.5*Math.sin(b.t*40)));g.fillPoints(pts,true);}
+      if(fl>0.02){g.fillStyle(0xffffff,fl);g.fillPoints(pts,true);}
+      g.restore();
+    }
+  }
   drawBoss(g,e,pal,q){ // ボス（本体の座標系：+xが正面）
     const r=e.r,armed=e.arms.some(a=>a.alive);
     g.fillStyle(pal.c1,1);
     for(let i=0;i<pal.n;i++){
       const a=i*Math.PI*2/pal.n+0.15,c=Math.cos(a),s=Math.sin(a),r0=r-5*BK;
-      g.fillTriangle(c*r0-s*10*BK,s*r0+c*10*BK,c*r0+s*10*BK,s*r0-c*10*BK,c*(r+12*BK),s*(r+12*BK));
+      crystalSpike(g,pal,c*r0-s*10*BK,s*r0+c*10*BK,c*r0+s*10*BK,s*r0-c*10*BK,c*(r+12*BK),s*(r+12*BK),a,GLASS_ROT,1);
     }
     g.fillStyle(pal.c0,1);g.fillCircle(0,0,r);glassOv(g,r,pal,e.a);
     g.lineStyle(4,pal.c2,1);g.strokeCircle(0,0,r);
@@ -2962,13 +3516,13 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
       g.fillStyle(armed?pal.c2:0xff3355,1);g.fillCircle(-r*0.3,0,7*BK);g.fillCircle(r*0.3,0,7*BK);
       this.drawTurrets(g,e,q);return;
     }
+    if(e.ck>0.02){g.lineStyle(4,0xffffff,e.ck*0.85);g.strokeCircle(0,0,r*0.97);} // 鉄のボス：ガキンの瞬間に光る
     g.fillStyle(armed?pal.c2:0xff3355,1);g.fillCircle(0,-r*0.3,7*BK);g.fillCircle(0,r*0.3,7*BK); // 目：砲台のボスと同じ大きさ・間隔で、進行方向に対して左右に並ぶ
     const W2=SH_R*2;
     for(let i=0;i<2;i++){
       const ar=e.arms[i];if(!ar.alive)continue;
       const{sx,sy,hx,hy}=armPtsE(e,i),mx=(sx+hx)/2,my=(sy+hy)/2;
-      const qd=plateQuad(sx,sy,hx,hy,SH_R);g.fillStyle(pal.c0,1);g.fillPoints(qd,true);g.lineStyle(3,pal.c2,1);g.strokePoints(qd,true); // 長い辺も短い辺も輪郭を描く
-      g.lineStyle(2,pal.c1,0.85);g.lineBetween(sx+(hx-sx)*0.12,sy+(hy-sy)*0.12,sx+(hx-sx)*0.9,sy+(hy-sy)*0.9);
+      const qd=plateQuad(sx,sy,hx,hy,SH_R);for(const hf of plateHalves(sx,sy,hx,hy,SH_R,e.a,pal)){g.fillStyle(hf.col,1);g.fillPoints(hf.q,true);}g.lineStyle(3,pal.c2,1);g.strokePoints(qd,true); // 横に半分の2枚のガラス面（真ん中の線なし）。外周の輪郭だけ描く
       if(ar.tear>0.02){ // ちぎり進行：赤く染まり、板の中央にゲージ
         g.lineStyle(W2-1,0xff3355,Math.min(0.6,ar.tear*0.7));g.lineBetween(sx,sy,hx,hy);
         g.lineStyle(5,0xffffff,0.95);g.beginPath();g.arc(mx,my,SH_R+11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,ar.tear),false);g.strokePath();
@@ -2980,9 +3534,9 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
   drawClam(g,e,pal){ // 貝（本体座標：前が+x）。中の小さな本体と、真ん中で二つに割れる四角いシールド
     const k=CL_B/ER;
     g.fillStyle(pal.c1,1);
-    for(let i=0;i<pal.n;i++){const a=i*Math.PI*2/pal.n,c=Math.cos(a),s=Math.sin(a),r0=(ER-4)*k;g.fillTriangle(c*r0-s*9*k,s*r0+c*9*k,c*r0+s*9*k,s*r0-c*9*k,c*(ER+11)*k,s*(ER+11)*k);}
+    for(let i=0;i<pal.n;i++){const a=i*Math.PI*2/pal.n,c=Math.cos(a),s=Math.sin(a),r0=(ER-4)*k;crystalSpike(g,pal,c*r0-s*9*k,s*r0+c*9*k,c*r0+s*9*k,s*r0-c*9*k,c*(ER+11)*k,s*(ER+11)*k,a,GLASS_ROT,1);}
     g.fillStyle(pal.c0,1);g.fillCircle(0,0,CL_B);g.lineStyle(2,pal.c2,1);g.strokeCircle(0,0,CL_B);
-    g.fillStyle(pal.c2,1);g.fillCircle(CL_B*0.4,-4,3);g.fillCircle(CL_B*0.4,4,3);glassOv(g,CL_B,pal,e.a);
+    glassOv(g,CL_B,pal,e.a);g.fillStyle(pal.c2,1);g.fillCircle(CL_B*0.4,-4,3);g.fillCircle(CL_B*0.4,4,3);
     if(!e.shell)return;
     const S=CL_S,op=e.open||0,m=6;
     for(const sg of[-1,1]){
@@ -3001,6 +3555,7 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
     const e=this.e,h=this.h;
     // 壁のフラッシュ＆衝撃リング
     this.drawSpikes(g);
+    this.drawIceWall(g);
     if(this.wallF>0.02){g.lineStyle(5,0xffffff,0.9*this.wallF);strokeWall(g);}
     for(const i of this.imps){const k=i.t/0.35,sz=i.s||1;if(i.fill){g.fillStyle(0xffb347,0.55*(1-k));g.fillCircle(i.x,i.y,(10+i.t*420)*0.55*sz);}g.lineStyle(3*sz,i.c||0xffffff,1-k);g.strokeCircle(i.x,i.y,10+i.t*420*sz);}
     { // 花火：中心の閃光と、尾を引く星
@@ -3032,6 +3587,7 @@ const ax=sh.x+Math.cos(sh.a)*l,ay=sh.y+Math.sin(sh.a)*l,bx=sh.x+Math.cos(sh.a+2.
 g.fillStyle(sh.c,0.32*al);g.fillTriangle(ax,ay,bx,by,cx,cy);
 g.lineStyle(1.5,0xffffff,0.85*al);g.strokeTriangle(ax,ay,bx,by,cx,cy);
 g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
+    for(const e of this.es)if(e.kind==='prism'&&!e.dead)this.drawPrism(g,e.pr); // プリズム（敵より下に描く）
     // 敵
     for(const e of this.es){
       if(e.tele>0){ // 突進の予告
@@ -3039,10 +3595,11 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
         g.lineStyle(3,0xff3355,0.5+0.5*(Math.floor(e.tele*20)%2));g.strokeCircle(e.x,e.y,(e.r||ER)+8+20*k);
         g.lineStyle(2,0xff3355,0.35);g.lineBetween(e.x,e.y,q.p.x,q.p.y);
       }
-      g.save();g.translateCanvas(e.x+(e.jx||0),e.y+(e.jy||0));g.rotateCanvas(e.a);GLASS_ROT=e.a;
-      const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='eyes'?EPAL.eyes:(EPAL[e.type]||EPAL.norm);
+      g.save();g.translateCanvas(e.x+(e.jx||0),e.y+(e.jy||0));g.rotateCanvas(e.a);GLASS_ROT=e.a;GLASS_CAM=this.cameras.main.rotation||0;
+      const pal=(e.kind==='glass'||e.mn)?EPAL.gboss:e.kind==='iron'?EPAL.iboss:e.kind==='ice'?EPAL.iceboss:e.kind==='eyes'?EPAL.eyes:e.kind==='prism'?EPAL.prism:(EPAL[e.type]||EPAL.norm);
       if(e.mn){const k=e.r/ER;g.scaleCanvas(k,k);} // 小さい敵は、普通の敵を縮めた姿
-      if(e.type==='boss')this.drawBoss(g,e,pal,q);
+      if(e.kind==='prism')this.drawTurret(g,0,0,e.r/ER,Math.atan2(e.pr.cy-e.y,e.pr.cx-e.x)-e.a,e.chg>0?1-e.chg/PB_CHG:(e.emit>0?1:0),0,1,'prism'); // 水色の大きな目玉。黒目は常にプリズムを向く
+      else if(e.type==='boss')this.drawBoss(g,e,pal,q);
       else if(e.type==='clam')this.drawClam(g,e,pal);
       else if(e.type==='beamer')this.drawTurret(g,0,0,1,(e.emit>0?e.aimA:Math.atan2(q.p.y-e.y,q.p.x-e.x))-e.a,e.chg>0?1-e.chg/BM_CHG:(e.emit>0?1:0),0,1,'beamer'); // ロングビームの敵：目玉の敵と同じ姿でオレンジ
       else if(e.type==='eyes')this.drawTurret(g,0,0,1,(e.emit>0?e.aimA:Math.atan2(q.p.y-e.y,q.p.x-e.x))-e.a,e.chg>0?1-e.chg/EYE_CHG:(e.emit>0?1:0)); // 黒目の向きは世界の向き（本体の回転を引いて、本体の向きに影響されない）
@@ -3050,11 +3607,11 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
       g.fillStyle(pal.c1,1);
       for(let i=0;i<pal.n;i++){
         const a=i*Math.PI*2/pal.n,c=Math.cos(a),s=Math.sin(a),r0=ER-4;
-        g.fillTriangle(c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11));g.lineStyle(1.2,0xffffff,0.5*1);g.strokeTriangle(c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11));
+        crystalSpike(g,pal,c*r0-s*9,s*r0+c*9,c*r0+s*9,s*r0-c*9,c*(ER+11),s*(ER+11),a,GLASS_ROT,1);
       }
       g.fillStyle(pal.c0,1);g.fillCircle(0,0,ER);
       g.lineStyle(3,pal.c2,1);g.strokeCircle(0,0,ER);
-      g.fillStyle(pal.c2,1);g.fillCircle(ER*0.4,-7,5);g.fillCircle(ER*0.4,7,5);glassOv(g,ER,pal,e.a);
+      glassOv(g,ER,pal,e.a);g.fillStyle(pal.c2,1);g.fillCircle(ER*0.4,-7,5);g.fillCircle(ER*0.4,7,5);
       if(e.cool>0){ // 分離したばかり：高熱のオレンジ色に光っていて、冷めるにつれて消え、灰色のガラスに固まる
         const c=e.cool/e.coolMax,tt=e.cool*9,pts=[];
         for(let i=0;i<16;i++){const a=i*Math.PI*2/16,rr=(ER+9)*(1+0.1*Math.sin(tt+i*2.1)+0.06*Math.sin(tt*1.9-i*3));pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});}
@@ -3070,6 +3627,8 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
         g.lineStyle(5,lm?0x66e0ff:0xffffff,0.95);g.beginPath();g.arc(e.x,e.y,R,-Math.PI/2,-Math.PI/2+Math.PI*2*fr,false);g.strokePath();
       }
     }
+    for(const e of this.es)if(e.kind==='ice'&&!e.dead)this.drawIce(g,e);
+    this.drawBlocks(g);
     if(this.es.length)for(const b of this.bul)this.drawLaser(g,b);
     // ちぎれた盾
     for(const pc of this.pieces){
@@ -3086,8 +3645,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
       }else if(pc.type==='turret'){this.drawTurret(g,pc.x,pc.y,TURR/ER,0,-1,pc.a,al);g.lineStyle(3,0xff3355,0.85*al);g.strokeCircle(pc.x,pc.y,TURR+2);} // ちぎれた砲台（光なし）
       else{
       g.save();g.translateCanvas(pc.x,pc.y);g.rotateCanvas(pc.a);
-      const qd=plateQuad(-L,0,L,0,SH_R);g.fillStyle(pal.c0,al);g.fillPoints(qd,true);g.lineStyle(3,pal.c2,al);g.strokePoints(qd,true);
-      g.lineStyle(2,pal.c1,0.85*al);g.lineBetween(-L+2*L*0.12,0,-L+2*L*0.9,0); // 盾についていた線と同じ位置（断面の赤線は描かない）
+      const qd=plateQuad(-L,0,L,0,SH_R);for(const hf of plateHalves(-L,0,L,0,SH_R,pc.a,pal)){g.fillStyle(hf.col,al);g.fillPoints(hf.q,true);}g.lineStyle(3,pal.c2,al);g.strokePoints(qd,true); // 盾と同じ、横に半分の2枚のガラス面（真ん中の線なし。断面の赤線は描かない）
       g.restore();
       }
       if(pc.flash>0.02){g.fillStyle(0xffffff,0.7*pc.flash);g.fillCircle(pc.x,pc.y,pc.r*0.8);}
@@ -3103,6 +3661,16 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'harp'); // 左右の銛（散弾）。銛は本体の下、紐は本体の上に描く
     this.drawHarp(g,q,h,this.rope,true,undefined,'harp');
     // 機械本体（レールに対して角度固定）。無敵中は点滅
+    if(this.afi.length){ // Dodgeの残像：通った場所に、水色の薄い自機が残って消えていく
+      for(const a of this.afi){
+        const k=1-a.t/DG_AFT;if(k<=0)continue;
+        const pa=at(a.s),ph=Math.atan2(-pa.tx,pa.ty);
+        g.save();g.translateCanvas(pa.x,pa.y);g.rotateCanvas(ph);g.scaleCanvas(BS,BS);
+        g.fillStyle(0x9fe4ff,0.3*k);g.fillRoundedRect(-10,-24,20,11,3);g.fillRoundedRect(-10,13,20,11,3);
+        g.fillStyle(0x7fe3ff,0.45*k);g.fillRoundedRect(3,-14,24,28,6);
+        g.restore();
+      }
+    }
     const rc=this.recoil,ma=(this.inv>0&&(Math.floor(this.inv*16)%2))?0.3:1;
     g.save();g.translateCanvas(q.p.x,q.p.y);g.rotateCanvas(q.phi);g.scaleCanvas(BS,BS);
     const skn=SHIP_SKIN[this.eq()]||SHIP_SKIN.std; // 装備中の砲台の見た目
@@ -3112,6 +3680,22 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     g.lineStyle(2,skn.ol,ma);g.strokeRoundedRect(3-rc,-14,24,28,6);
     if(skn.bodyDeco)skn.bodyDeco(g,rc,ma);
     g.restore();
+    if(this.dg>0){ // Dodgeのスタミナ：自機の下（レールの外側）に並ぶ、角の丸い小さな正方形。水色に光る＝使える／灰色＝回復待ち。回復の瞬間は白く光って少し膨らむ
+      const n=this.dg,av=n-this.dgT.length,ph=this.shA*2.5;
+      g.save();g.translateCanvas(q.p.x,q.p.y);g.rotateCanvas(q.phi);g.scaleCanvas(BS,BS);
+      for(let i=0;i<n;i++){
+        const row=Math.floor(i/DG_ROW),cnt=Math.min(DG_ROW,n-row*DG_ROW),x=-20-row*10,y=((i%DG_ROW)-(cnt-1)/2)*10;
+        if(i<av){
+          const pop=Math.max(0,(this.dgPop[i]||0)/DG_POP),h=3.4*(1+0.55*pop),col=lerpC(0x6fdcff,0xffffff,pop),gl=0.2+0.08*Math.sin(ph+i*0.9)+0.45*pop;
+          g.fillStyle(0x57c8ff,gl);g.fillRoundedRect(x-h-3,y-h-3,2*h+6,2*h+6,h*0.7+2);
+          g.fillStyle(col,1);g.fillRoundedRect(x-h,y-h,2*h,2*h,h*0.45);
+          g.fillStyle(0xffffff,0.35+0.4*pop);g.fillRoundedRect(x-h*0.55,y-h*0.55,h*1.1,h*1.1,h*0.25);
+        }else{
+          g.fillStyle(0x5d6573,0.9);g.fillRoundedRect(x-3.4,y-3.4,6.8,6.8,1.6);
+        }
+      }
+      g.restore();
+    }
     for(const x of this.ex)this.drawHarp(g,q,x.h,x.rope,false,x.taut,'rope'); // 紐：本体より上、発射台（銃身）より下
     this.drawHarp(g,q,h,this.rope,true,undefined,'rope');
     if(this.shn>0){ // シールド：自機を覆って回る正方形。1枚目が本体を覆い、2枚目以降は同じ角度でほんの少し外側に重なる。色は枚数ごとに変わる
