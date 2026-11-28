@@ -325,13 +325,14 @@ const DRIFT_BOUNCE=0.14;  // 壁に当たった銛の跳ね返り（飛ぶ速さ
 const DRIFT_DAMP=0.9;     // 漂う銛の減速（大きいほどすぐ止まる）
 const DRIFT_WOBBLE=70;    // 漂う銛のふらつき
 const LASER_KB=1500; // レーザーで刺された敵が吹き飛ぶ速さの基準（爆弾のBOMB_KBより少し強め。重い敵ほど控えめ）
+const BOSS_REST_ADD=0.12; // ボスの壁との反発：通常の反発に足す量（上限なし。空気抵抗で勢いは減る）
 const KB_V=320;         // 銛が刺さった時に敵が押される速さ（px/秒）
 const EPAL={prism:{n:6,c1:0x57c8ff,c0:0x0b2a40,c2:0x9fe4ff},norm:{n:8,c1:0xff5e7a,c0:0x3a1624,c2:0xff6e8c},chaser:{n:6,c1:0x4fd8ff,c0:0x0e2a3a,c2:0x7fe3ff},eyes:{n:6,c1:0xc77dff,c0:0x1a0f2a,c2:0xd9a6ff},boss:{n:10,c1:0xffb347,c0:0x2a1a0a,c2:0xffd27a},clam:{n:6,c1:0x5be3b0,c0:0x0c2a24,c2:0x9ff5d3},beamer:{n:6,c1:0xff9a3c,c0:0x2a1608,c2:0xffc27a},gboss:{n:10,c1:0x9aa3b2,c0:0x1d2028,c2:0xc9d0dc},iboss:{n:10,c1:0x8a94a0,c0:0x3a4048,c2:0xd5dce4},iceboss:{n:10,c1:0xf2f8ff,c0:0xc3cfdc,c2:0xffffff}}; // 敵の種類ごとの見た目（トゲの数・色）
 const SHAPES=['line','square','circle','tri']; // ステージ5つごとに、この順で変わる（直線→四角形→円→三角形→直線…）
 const BOSS_AT={5:'boss',10:'eboss',15:'gboss',20:'pboss',25:'iboss',30:'iceboss'};
-const ICE_ORB=95,ICE_TIP=26,ICE_CHG=1.1,ICE_FIRE=3.2,ICE_ROT=0.25,ICE_W=36,ICE_WAIT=[1.8,2.8],ICE_FAR=2600,ICE_BRK=110,ICE_MINLEN=100,ICE_LIFE=10,ICE_REV=15,ICE_FADE=0.7; // 氷のボス：ICE_ORB＝結晶が浮かぶ距離の目安／ICE_TIP＝雪の結晶の腕の長さ／ICE_CHG＝ビームの溜め（予告線）の秒数／ICE_FIRE＝ビームが出ている秒数／ICE_ROT＝ビームの回る速さ(rad/秒)／ICE_W＝ビームの太さ／ICE_WAIT＝次の攻撃までの間隔の範囲／ICE_FAR＝ビームの長さ（壁を突き抜けて画面の外まで）
+const ICE_ORB=95,ICE_TIP=26,ICE_CHG=1.1,ICE_FIRE=3.2,ICE_ROT=0.25,ICE_W=36,ICE_WAIT=[1.8,2.8],ICE_FAR=2600,ICE_BRK=110,ICE_MINLEN=100,ICE_LIFE=10,ICE_REV=15,ICE_FADE=0.7,ICE_BF=0.5; // 氷のボス：ICE_ORB＝結晶が浮かぶ距離の目安／ICE_TIP＝雪の結晶の腕の長さ／ICE_CHG＝ビームの溜め（予告線）の秒数／ICE_FIRE＝ビームが出ている秒数／ICE_ROT＝ビームの回る速さ(rad/秒)／ICE_W＝ビームの太さ／ICE_WAIT＝次の攻撃までの間隔の範囲／ICE_FAR＝ビームの長さ（壁を突き抜けて画面の外まで）
 const IB_N=4,IB_GAP=0.55,IB_FORM=0.35,IB_SHAKE=0.9,IB_WAIT=[2.8,3.8],IB_ACC=3200,IB_VMAX=1700,IB_HB=[60,76]; // 鉄のボス：IB_N＝1回に作る塊の数／IB_GAP＝塊を作る間隔(秒)／IB_FORM＝作られる時間／IB_SHAKE＝振動して予告する時間／IB_WAIT＝次の攻撃までの間隔の範囲／IB_ACC・IB_VMAX＝落ちる加速と最高速／IB_HB＝塊の一辺の半分の大きさの範囲
-const PB_N=6,PB_GAP=0.32,PB_WAIT=2.6,PB_CHG=0.14,PB_SPD=700,PB_EMIT=0.1,PB_IN=3600,PB_REF=10,PB_R=78,PB_ROT=0.35,PB_ORB=175,PB_COL=0x7fe3ff,PB_HIT=0xdaf6ff; // プリズムのボス：1回に撃つ光線の数／光線どうしの間隔(秒)／撃ち終わってから次までの待ち(秒)／溜め(秒)／光線の速さ／出続ける時間(秒)／プリズムの中を進む速さ／プリズム内の反射回数／プリズムの大きさ(外接円の半径)／プリズムの回る速さ(rad/秒)／本体がプリズムのまわりを回る半径／光線の色・当たった点の色
+const PB_N=6,PB_GAP=0.32,PB_WAIT=2.6,PB_CHG=0.14,PB_SPD=700,PB_EMIT=0.1,PB_IN=PB_SPD,PB_REF=10,PB_R=78,PB_ROT=0.35,PB_ORB=175,PB_COL=0x7fe3ff,PB_HIT=0xdaf6ff; // プリズムのボス：1回に撃つ光線の数／光線どうしの間隔(秒)／撃ち終わってから次までの待ち(秒)／溜め(秒)／光線の速さ／出続ける時間(秒)／プリズムの中を進む速さ／プリズム内の反射回数／プリズムの大きさ(外接円の半径)／プリズムの回る速さ(rad/秒)／本体がプリズムのまわりを回る半径／光線の色・当たった点の色
 const BOSS_HP_SLOPE=15; // ボスのHPのステージごとの伸び（雑魚はENEMY_HP_SLOPE）。HP＝(100＋伸び×(ステージ−1))×1.4
 const GL_MAX=6,GL_SW=0.8,GL_KR=20,GL_KHP=10,GL_KNX=[3.5,6]; // GL_KNX＝小さい敵が次に動く（突進する）までの間隔(秒)の範囲。大きくするほど突進が減る
 // // ガラスのボス：小さい敵が同時にいられる数／玉が膨らんで分離するまでの時間(秒)／小さい敵の半径／小さい敵のHP
@@ -556,9 +557,9 @@ const UPG=[ // ボス撃破ごとの三択。rk＝ランク（0=C 1=B 2=A(赤) 3
   {id:'h2',rk:1,w:20,ic:'♥♥',nm:'HP +2',ds:'Heal 2 HP'},
   {id:'h3',rk:2,w:12,ic:'♥♥♥',nm:'HP +3',ds:'Heal 3 HP'},
   {id:'h4',rk:3,w:6,ic:'♥♥♥♥',nm:'HP +4',ds:'Heal 4 HP'},
-  {id:'m1',rk:1,w:20,ic:'♥+',nm:'Max HP +1',ds:'Max HP +1'},
-  {id:'m2',rk:2,w:12,ic:'♥++',nm:'Max HP +2',ds:'Max HP +2'},
-  {id:'m3',rk:3,w:6,ic:'♥+++',nm:'Max HP +3',ds:'Max HP +3'},
+  {id:'m1',rk:1,w:20,ic:'♥+',nm:'Max HP +1',ds:'Max HP +1, and heal 1 HP'},
+  {id:'m2',rk:2,w:12,ic:'♥++',nm:'Max HP +2',ds:'Max HP +2, and heal 2 HP'},
+  {id:'m3',rk:3,w:6,ic:'♥+++',nm:'Max HP +3',ds:'Max HP +3, and heal 3 HP'},
   {id:'rv',rk:4,w:3,ic:'✚',nm:'Revive',ds:'Revive once at full HP'},
   {id:'pu1',rk:0,w:30,ic:'⇦',nm:'Pull Power +15%',ds:'Stronger pull'},
   {id:'pu2',rk:1,w:20,ic:'⇦⇦',nm:'Pull Power +30%',ds:'Much stronger pull'},
@@ -976,6 +977,7 @@ const IC={
   spike:'<svg viewBox="0 0 64 64"><path d="M6 50h52"/><path d="M10 50l6-18 6 18M26 50l6-26 6 26M42 50l6-18 6 18"/></svg>',
   scatter:'<svg viewBox="0 0 64 64"><path d="M10 54L36 28M10 54L20 20M10 54L52 40"/><path d="M36 20l6 0 0 6zM15 12l5-3 1 6zM50 34l6 2-4 5z"/></svg>',
   firework:'<svg viewBox="0 0 64 64"><circle cx="32" cy="24" r="4"/><path d="M32 4v10M32 34v10M10 24h10M44 24h10M16 8l7 7M41 33l7 7M48 8l-7 7M23 33l-7 7"/><path d="M32 46q-7 6 0 12"/></svg>',
+  magnet:'<svg viewBox="0 0 64 64"><path d="M20 8v22a12 12 0 0 0 24 0V8"/><path d="M14 8h12M38 8h12"/><path d="M32 44v14"/></svg>',
   sil:'<svg viewBox="0 0 64 64"><circle cx="32" cy="20" r="10"/><rect x="21" y="30" width="22" height="24" rx="7"/></svg>'
 };
 const TURRETS=[
@@ -985,6 +987,7 @@ const TURRETS=[
   {id:'spike',name:'Spike Turret',desc:'Like the standard harpoon, plus gray spikes grow on the 13 wall segments to your left and right. They follow you as you move and stack with wall spikes.',price:300,icon:IC.spike},
   {id:'bomb',name:'Bomb',desc:'Explodes when it sticks, dealing fixed damage.',price:400,icon:IC.bomb},
   {id:'firework',name:'Fireworks',desc:'While stuck, sparks run along the rope like a fuse. When they reach the enemy, a fixed-power firework goes off and deals damage (no knockback).',price:500,icon:IC.firework},
+  {id:'magnet',name:'Magnet',desc:'The harpoon tip is a U-shaped magnet. Enemies that touch the one you are swinging stick to it (chains too), rolling around its edge like gears. Slam it into a wall and every stuck enemy takes half the damage.',price:600,icon:IC.magnet},
   {soon:true}
 ];
 /* 砲台ごとの自機の見た目（定義の無い砲台は std と同じ）。一つずつ作っていく。
@@ -1014,6 +1017,12 @@ const SHIP_SKIN={
       for(const [x,y] of[[-12,-1.8],[-14,0],[-16,1.8],[-18,0],[-21,0]])g.lineTo(x,y);
       g.strokePath();
       g.fillStyle(0xffb347,ma);g.fillCircle(-21,0,2);g.fillStyle(0xffffff,ma);g.fillCircle(-21,0,0.9);
+    }},
+  magnet:{wh:0x9aa3b5,ax:0x3a4258,bd:0x3d6fd1,ol:0x26304d,ba:0x3a4258,
+    bodyDeco(g,rc,ma){ // 本体を赤と青のツートンに（上半分が赤・下半分が青）。真ん中に銀の線、縁は描き直す
+      g.fillStyle(0xd9473f,ma);g.fillRoundedRect(3-rc,-14,24,14,{tl:6,tr:6,bl:0,br:0});
+      g.fillStyle(0xe8ecf4,ma);g.fillRect(3-rc,-0.7,24,1.4);
+      g.lineStyle(2,0x26304d,ma);g.strokeRoundedRect(3-rc,-14,24,28,6);
     }},
   laser:{wh:0xb9c4e4,ax:0x66e0ff,bd:0xf4f7fc,ol:0x26304d,ba:0x4a5a85,
     bodyDeco(g,rc,ma){ // 本体の側面に、銃身と平行な青い線を二本（本体と一緒に反動で動く）
@@ -1066,11 +1075,11 @@ function shipCanvas(id){
   g.lineStyle(2,sk.ol,ma);g.strokeRoundedRect(3-rc,-14,24,28,6);
   if(sk.bodyDeco)sk.bodyDeco(g,rc,ma);
   { // 装填済みの銛（ゲーム中のセット状態と同じ形・位置。ゲーム側の座標は自機の2倍なので 0.5 倍で描く）
-    const hp=(bm,fw)=>Main.prototype.harpoonRaw(g,LEN0,bm,fw);
+    const hp=(bm,fw,mg)=>Main.prototype.harpoonRaw(g,LEN0,bm,fw,mg);
     x.save();x.translate(14-rc,0);
     if(id==='scatter'){for(const sl of[-1,0,1]){x.save();x.translate(0,sl*SC_OFF/BS);x.rotate(sl*SC_SPREAD);x.translate(-6,0);hp(false,false);x.restore();}}
     else if(id==='bomb'){x.translate(64-LEN0,0);hp(true,false);}
-    else{x.translate(-6,0);hp(false,id==='firework');}
+    else{x.translate(-6,0);hp(false,id==='firework',id==='magnet');}
     x.restore();
   }
   x.save();x.translate(14-rc,0);g.fillStyle(sk.ba,ma);if(sk.barBody)sk.barBody(g,ma);else g.fillRoundedRect(-10,-6,28,12,4);if(sk.barDeco)sk.barDeco(g,ma);x.restore();
@@ -1960,9 +1969,9 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(sk&&this.spkCD<=0){sfire=true;this.spkCD=SPK_CD;sdmg=SPK_DMG(sk.p)*(e.type==='boss'?0.6:1);}
     const dmg=Math.max(3,(imp-100)*0.04)*(1+0.18*(this.combo-1))+sdmg;
     const armored=e.type==='boss'&&e.arms.some(a=>a.alive);
-    {const dm=armored?dmg*0.2:dmg;e.hp-=dm;this.dmgNum(x,y,dm,armored);} // 盾が残っているボス本体はほとんど効かない（盾を先に）
+    {const dm=armored?dmg*0.2:dmg;e.hp-=dm;this.dmgNum(x,y,dm,armored);if(this.eq()==='magnet'&&this.h&&this.h.st==='stuck'&&this.h.tg===e)this.magnetShare(dm*0.5);} // 盾が残っているボス本体はほとんど効かない（盾を先に）
     e.flash=1;
-    if(this.h&&this.h.st==='stuck'&&this.h.tg===e)this.h.stT=0; // ダメージを与えるたびに、銛が外れるまでの時間をリセット
+    if(this.h&&this.h.st==='stuck'&&(this.h.tg===e||e.mg))this.h.stT=0; // ダメージを与えるたびに（マグネット：くっついている敵が壁に当たった時も）、銛が外れるまでの時間をリセット
     this.hitE.explode(14+Math.floor(28*k),x,y);
     cam.shake(120+130*k,0.004+0.011*k);this.softFlash(80,255,230,200,0.35);
     this.freeze=0.04+0.07*k;this.punch=0.06+0.13*k;this.wallF=1;
@@ -2079,7 +2088,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   applyUpg(id){
     save.upg[id]=(save.upg[id]||0)+1;persist();if(id[0]==='k'){this.spkN=(this.spkN||0)+1;chkCh(this);} // トゲ系の強化の数（チャレンジ用） // 強化図鑑：一度でも選んだ強化は解放される。値は取った回数（以前のセーブの1は1回として続きから数える）
     if(id[0]==='h')this.php=Math.min(this.maxhp,this.php+(+id[1])); // h1〜h4＝その数だけ回復
-    else if(id[0]==='m'){const n=id==='m3'?3:id==='m2'?2:1;this.maxhp+=n;} // 最大体力だけ増える（HPは回復しない）
+    else if(id[0]==='m'){const n=id==='m3'?3:id==='m2'?2:1;this.maxhp+=n;this.php=Math.min(this.maxhp,this.php+n);} // 最大体力が増えた分だけ、いまのHPも増える
     else if(id==='pu1'||id==='pu2'||id==='pu3')this.pullM+=0.15*(+id[2]); // 上限なし
     else if(id==='sp1'||id==='sp2'||id==='sp3')this.spd+=SPD_BASE*0.12*(+id[2]); // 上限なし
     else if(id==='ru1'||id==='ru2'||id==='ru3')this.mv+=0.15*(+id[2]); // 上限なし
@@ -2186,7 +2195,8 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   /* --- ロングビームの敵：漂う→溜める→その場に固定され、振動しながら長いビームを撃つ。撃っている間に銛が刺さると、ビームはパッと光って消える --- */
   beamerAI(q,e,st){
     const p=q.p;
-    if(e.emit>0&&st){ // 撃っている最中に銛が刺さった：出ているビームは強く光って消え、固定も解ける
+    const moved=e.emit>0&&e.fixed&&e.bx!==undefined&&Math.hypot(e.x-e.bx,e.y-e.by)>1; // 撃っている最中に、位置を動かされた（押された・くっつけられた等）
+    if(e.emit>0&&(st||moved)){ // 撃っている最中に銛が刺さった／位置を動かされた：出ているビームは強く光って消え、固定も解ける
       for(const b of this.bul)if(b.owner===e&&b.emit>0&&b.dy===undefined){b.dy=BM_DIE;b.vx=b.vy=0;b.emit=0;}
       e.emit=0;e.fixed=false;e.fire=BM_WAIT;
       sfx(2400,600,0.12,0.3,'triangle');
@@ -2203,7 +2213,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         if(e.chg<=0){
           e.aimA=Math.atan2(p.y-e.y,p.x-e.x);const a=e.aimA;
           this.shootBeam(a,e,()=>this.es.includes(e)?{x:e.x+(e.jx||0)+Math.cos(a)*EYE_PO,y:e.y+(e.jy||0)+Math.sin(a)*EYE_PO}:null,{sp:BM_BV,emit:BM_EMIT,col:BM_COL,hc:BM_HIT,snd:1});
-          e.fixed=true;
+          e.fixed=true;e.bx=e.x;e.by=e.y; // 撃ち始めの位置を覚える
         }
       }else{e.fire-=STEP;if(e.fire<=0)e.chg=BM_CHG;}
     }
@@ -2345,6 +2355,10 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       if(e.dead)continue;this.e=e;
       const f0=e.fire,n0=e.next;
       this.stepOne(q);
+      if(e.mg&&!e.dead){ // マグネットでくっついている敵：攻撃までのカウントダウンが半分の速さ（攻撃のペースが半分）
+        if(f0!==undefined&&e.fire<f0&&f0-e.fire<=STEP*1.01)e.fire+=(f0-e.fire)*0.5;
+        if(n0!==undefined&&e.next<n0&&n0-e.next<=STEP*1.01)e.next+=(n0-e.next)*0.5;
+      }
       if(add!==0&&!e.dead){ // 攻撃までのタイマーの減りを変える（リセットされた時は触らない）
         if(f0!==undefined&&e.fire<f0&&f0-e.fire<=STEP*1.01)e.fire+=add;
         if((e.type==='norm'||e.type==='clam')&&e.next<n0&&n0-e.next<=STEP*1.01)e.next+=add;
@@ -2360,8 +2374,48 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         else{a.x-=dx*k*0.5;a.y-=dy*k*0.5;b.x+=dx*k*0.5;b.y+=dy*k*0.5;}
       }
     }
+    this.magnetStep(q);
     this.pickFocus();
     this.stepBlocks(q);this.stepBeams(q); // 光線は敵の数に関係なくフレームに1回だけ進める（敵が倒れても光線は進み続ける）
+  }
+  magnetStep(q){ // マグネット砲台：銛が刺さって振り回している敵に、他の敵が触れるとくっつく（くっついた敵にも連鎖）。くっつき方＝円の外周どうしが接し、接点は自由に回れる（歯車のように）
+    const A=this.es,hs=this.h&&this.h.st==='stuck'&&this.eq()==='magnet'?this.h.tg:null;
+    if(!hs||hs.dead||!A.includes(hs)){for(const e of A)if(e.mg)e.mg=null;return;}
+    const cl=[hs],inC=new Set(cl);
+    for(let ch=true;ch;){ch=false;for(const e of A)if(e.mg&&!e.dead&&!inC.has(e)&&inC.has(e.mg.p)){cl.push(e);inC.add(e);ch=true;}} // いまの付着を、親から順にたどる
+    for(const e of A)if(e.mg&&!inC.has(e))e.mg=null; // 親が倒れた・銛が外れた：離れる
+    const R=e=>e.r||ER;
+    for(let ch=true;ch;){ch=false;
+      for(const c of A){
+        if(inC.has(c)||c.dead||c.type==='boss'||c.tut||c.isPiece)continue;
+        for(const m of cl){
+          if(Math.hypot(c.x-m.x,c.y-m.y)<R(c)+R(m)-6+4){ // 触れた：くっつく
+            c.mg={p:m};cl.push(c);inC.add(c);ch=true;
+            const cx=(c.x+m.x)/2,cy=(c.y+m.y)/2;this.hitE.explode(6,cx,cy);pingSfx(0.1,1.8,0.3);
+            break;
+          }
+        }
+      }
+    }
+    for(const c of cl){ // 親から順に、距離を「半径の和」に保つ（角度は自由）
+      if(c===hs)continue;
+      const m=c.mg.p,D=R(m)+R(c)-6;
+      let dx=c.x-m.x,dy=c.y-m.y,d=Math.hypot(dx,dy)||1e-6,nx=dx/d,ny=dy/d,px=m.x+nx*D,py=m.y+ny*D;
+      if(arPush(px,py,R(c))){ // 壁にめり込む：接点を回して空いている位置へ
+        const a0=Math.atan2(dy,dx);let best=null;
+        for(let k=1;k<=24&&!best;k++)for(const sg of[1,-1]){const a=a0+sg*k*0.13,x2=m.x+Math.cos(a)*D,y2=m.y+Math.sin(a)*D;if(!arPush(x2,y2,R(c))){best={x:x2,y:y2,a};break;}}
+        if(best){px=best.x;py=best.y;nx=Math.cos(best.a);ny=Math.sin(best.a);}
+      }
+      c.x=px;c.y=py;
+      const vn=(c.vx-m.vx)*nx+(c.vy-m.vy)*ny;c.vx-=vn*nx;c.vy-=vn*ny; // 親へ向かう・離れる速さだけ合わせる（接線方向は自由＝接点が回る）
+    }
+  }
+  magnetShare(dm){ // くっついている敵全員に、ぶつけた敵が食らったダメージの半分
+    for(const c of this.es.slice()){
+      if(!c.mg||c.dead)continue;
+      c.hp-=dm;this.dmgNum(c.x,c.y,dm,false);c.flash=1;this.hitE.explode(8,c.x,c.y);
+      if(c.hp<=0){if(c.isPiece)this.breakPiece(c);else this.kill(c);}
+    }
   }
   stepOne(q){
     const e=this.e,h=this.h,st=!!h&&h.st==='stuck'&&h.tg===e;
@@ -2395,7 +2449,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     this.stepBody(e,q);
     if(e.dead)return;
     if(e.type==='boss'&&e.sp>0)e.w=0; // 盾の回転攻撃中、本体は回らない
-    if((e.kind==='eyes'&&e.arms.some(a=>a.alive))||e.kind==='prism'){e.a=0;e.w=0;} // 新ボスは砲台が残っている間だけ向きを固定（位置は物理で動く）。全部取れたら自由に回る
+    if(e.kind==='eyes'&&e.arms.some(a=>a.alive)){e.a=0;e.w=0;} // 目玉のボスは砲台が残っている間だけ向きを固定（位置は物理で動く）。全部取れたら自由に回る。プリズムのボスは固定せず、体は自由に回る（黒目の向きは描画時に本体の回転を引いて世界に固定している）
     // 自機に当たったらダメージ（ボスは盾にも当たり判定がある）
     if(this.inv<=0&&this.shInv<=0&&!(this.dgR>0)&&!this.tutOn&&!(e.cool>0)){ // 回避中（Dodge）は、敵に触れてもダメージを受けない
       const p=q.p,rx=e.x-p.x,ry=e.y-p.y,lx=rx*q.nx+ry*q.ny,ly=rx*p.tx+ry*p.ty;
@@ -2495,7 +2549,8 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
         e.vx-=(1+CRY_REST)*vn*w.nx;e.vy-=(1+CRY_REST)*vn*w.ny;e.w=clamp(e.w+(Math.random()-0.5)*2,-4,4);
         if(vn>40){pingSfx(0.12,1.5,0.35);this.hitE.explode(4,e.x+w.nx*e.r,e.y+w.ny*e.r);}
       }else if(vn>0){
-        e.vx-=(1+this.rest)*vn*w.nx;e.vy-=(1+this.rest)*vn*w.ny;
+        const rs=e.type==='boss'?this.rest+BOSS_REST_ADD:this.rest; // ボスだけ、壁との反発を上げる
+        e.vx-=(1+rs)*vn*w.nx;e.vy-=(1+rs)*vn*w.ny;
         const jt=(Math.random()-0.5)*vn*0.35;e.vx+=-w.ny*jt;e.vy+=w.nx*jt;
         e.w=clamp(e.w+(Math.random()-0.5)*vn/e.r*0.9,-14,14);
         this.wallHit(e.x+w.nx*e.r,e.y+w.ny*e.r,vn,e,w);
@@ -2553,8 +2608,8 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       e.vx+=((tx-e.x)*3-e.vx*2)*STEP;e.vy+=((ty-e.y)*3-e.vy*2)*STEP; // 軌道へ戻るやわらかい力
     }
     e.aimA=Math.atan2(pr.cy-e.y,pr.cx-e.x);
-    if(st){/* 銛が刺さっている間は、溜めも待ち時間も止まる */}
-    else if(e.chg>0){e.chg-=STEP;if(e.chg<=0)this.prismShoot(e);}
+    if(e.limp>0){/* 綱引きに負けて力が抜けている間（自由に振り回せる期間）は、溜めも待ち時間も止まって攻撃しない */}
+    else if(e.chg>0){e.chg-=STEP;if(e.chg<=0)this.prismShoot(e);} // 銛が刺さっている間（綱引き中）は、止めずにビームを撃つ
     else{e.fire-=STEP;if(e.fire<=0){if(!(e.vol>0))e.vol=PB_N;e.chg=PB_CHG;}}
   }
   prismShoot(e){ // プリズムの中のランダムな点へ向けて光線を1発撃つ（プリズムに入った光線の処理はstepBeams）
@@ -2582,6 +2637,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     cr.a+=(ib?0.15:0.6)*STEP; // 結晶はゆっくり自転する
     {const tg=ib?(ib.ph===1?1:ib.t/ICE_CHG):0;cr.gl=cr.rv>0?0:tg>=(cr.gl||0)?tg:Math.max(tg,cr.gl-STEP/ICE_FADE);} // 結晶の光の強さ：溜める時は上がり、撃ち終わったらICE_FADE秒かけてゆっくり小さく薄くなる
     if(cr.pop>0)cr.pop-=STEP;
+    if(cr.bf>0)cr.bf-=STEP;
     if(cr.rv>0){ // 結晶が砕けている間：ビームは出せない。時間がたつと、その場でパッと蘇る
       cr.rv-=STEP;
       if(cr.rv<=0){cr.rv=0;cr.pop=0.45;cr.vx=cr.vy=0;e.iw=Math.max(e.iw,1);this.hitE.explode(18,cr.x,cr.y);pingSfx(0.2,1.2,1);this.softFlash(80,200,235,255,0.3);}
@@ -2604,9 +2660,10 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
   }
   iceCrystalBreak(e,tx,ty){ // 結晶が砕ける：撃っている途中ならビームも消える。銛は刺さらず弾かれる。ICE_REV秒後に蘇る
     const cr=e.cr,h=this.h,cam=this.cameras.main;
-    cr.rv=ICE_REV;e.ib=null;e.iw=rnd(ICE_WAIT[0],ICE_WAIT[1]);
+    cr.rv=ICE_REV;cr.bf=ICE_BF;cr.bx=cr.x;cr.by=cr.y;e.ib=null; // bf＝砕けた瞬間の閃光の残り時間（砕けた位置 bx,by で光る）
+    e.iw=rnd(ICE_WAIT[0],ICE_WAIT[1]);
     for(let i=0;i<36;i++){const a=rnd(0,6.283),sp=rnd(180,700),cc=Math.random(),r0=rnd(0,ICE_TIP*0.8);this.shards.push({x:cr.x+Math.cos(a)*r0,y:cr.y+Math.sin(a)*r0,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:rnd(0,6.283),w:rnd(-22,22),t:0,c:cc<0.5?0xffffff:cc<0.8?0xcfe8ff:0x66e0ff});}
-    this.hitE.explode(20,cr.x,cr.y);cam.shake(160,0.01);this.softFlash(80,200,235,255,0.35);
+    this.hitE.explode(20,cr.x,cr.y);this.imps.push({x:cr.x,y:cr.y,t:0,s:2.2,c:0xcfeeff});cam.shake(220,0.014);this.softFlash(160,210,240,255,0.6);
     if(!playSnd('glassbreak',0.8,rnd(1.4,1.7)))sfx(3000,900,0.15,0.3,'triangle');
     if(h){const sv=Math.min(this.spd,SPD_SAFE);h.dvx=-h.ux*sv*0.2;h.dvy=-h.uy*sv*0.2;h.ang=Math.atan2(h.uy,h.ux);h.dw=rnd(-5,5);h.st='drift';h.trail.length=0;} // 銛は刺さらず、その場で漂う
   }
@@ -2622,7 +2679,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     let diff=Math.atan2(dy,dx)-e.a;diff=Math.atan2(Math.sin(diff),Math.cos(diff));
     const want=clamp(diff*2.2,-1.1,1.1)*1.2*(st?0:1);
     e.w+=(want-e.w)*Math.min(1,4*STEP);
-    const ac=45*(st?0.3:1)*STEP,aim=this.aimDir(q,e);e.vx+=aim.dx/aim.d*ac;e.vy+=aim.dy/aim.d*ac;
+    // 自機に向かって迫る動きはなし（その場に留まる。引かれたり、壁で跳ね返った勢いだけで動く）
     if(e.ibN>0){e.ibCd-=STEP;if(e.ibCd<=0){this.makeBlock(e,q);e.ibN--;e.ibCd=IB_GAP;if(e.ibN<=0)e.iw=rnd(IB_WAIT[0],IB_WAIT[1]);}}
     else{e.iw-=STEP;if(e.iw<=0){e.ibN=IB_N;e.ibCd=0.3;}}
   }
@@ -3019,7 +3076,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       else ang=Math.atan2(h.b.y-q.pvy,h.b.x-q.pvx);
       g.save();g.translateCanvas(h.b.x,h.b.y);g.rotateCanvas(ang);
       const L=h.st==='stuck'?Math.max(1,h.sl):LEN; // 刺さっている間は、縮んだ判定の長さのまま描く
-      this.harpoon(g,L,this.eq()==='bomb'&&!h.bd,this.eq()==='firework'); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
+      this.harpoon(g,L,this.eq()==='bomb'&&!h.bd,this.eq()==='firework',this.eq()==='magnet'); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
       if(h.st==='stuck'){ // 砕ける前触れ：最後は白く点滅（ひびの線は描かない）
         const k=h.stT/this.stuckT;
         if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2*BS,-7*BS,(L+8)*BS,14*BS,5*BS);}
@@ -3228,10 +3285,20 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(this.h){this.stepHarpoon(q);if(this.h)this.stepExtras(q);}
   }
 
-  harpoon(g,len,bomb,fw){ // 銛を自機のサイズ(BS)に合わせて描く（len＝当たり判定の長さ。自機のサイズでは変わらない。見た目だけ、元の形をBS倍にして描く＝長さ・太さ・爆弾が比例する）
-g.save();g.scaleCanvas(BS,BS);this.harpoonRaw(g,len,bomb,fw);g.restore();
+  harpoon(g,len,bomb,fw,mg){ // 銛を自機のサイズ(BS)に合わせて描く（len＝当たり判定の長さ。自機のサイズでは変わらない。見た目だけ、元の形をBS倍にして描く＝長さ・太さ・爆弾が比例する）
+g.save();g.scaleCanvas(BS,BS);this.harpoonRaw(g,len,bomb,fw,mg);g.restore();
 }
-harpoonRaw(g,len,bomb,fw){ // 元の大きさ(BS=1)の銛の形。bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
+harpoonRaw(g,len,bomb,fw,mg){ // 元の大きさ(BS=1)の銛の形。bomb＝先端近くに爆弾を刺した形（爆弾の砲台）／mg＝先端が上（前）向きのU字磁石（マグネットの砲台）
+    if(mg){
+      const k=Math.min(1,len/30),X=t=>len-t*k; // t＝先端から後ろへの距離（k＝縮んだ時の倍率）
+      g.fillStyle(0xcfd8ee,1);g.fillRect(0,-2.2,Math.max(0,X(24)),4.4); // 軸
+      g.lineStyle(5*k,0x9aa3b5,1);g.beginPath();g.moveTo(X(0),-7*k);g.lineTo(X(18),-7*k); // U字：開いた側が先端（前）
+      for(let i=1;i<=10;i++){const f=i/10*Math.PI;g.lineTo(X(18)-7*k*Math.sin(f),-7*k*Math.cos(f));}
+      g.lineTo(X(0),7*k);g.strokePath();
+      g.fillStyle(0xd9473f,1);g.fillRect(X(12),-9.5*k,12*k,5*k); // 先端の極（赤と青）
+      g.fillStyle(0x3d6fd1,1);g.fillRect(X(12),4.5*k,12*k,5*k);
+      return;
+    }
     const hl=Math.min(26,len),k=hl/26;
     if(fw){ // 花火砲台：白っぽい軸に赤い斜めの縞（縞は軸の長さに合わせて数が変わる）
       const sl=Math.max(0,len-18);g.fillStyle(0xf1e3c0,1);g.fillRect(0,-2.2,sl,4.4);
@@ -3441,7 +3508,14 @@ const w=Math.max(2,w0*LASER_THICK*gr*kb),a=Math.min(1,al*(1+4*fl))*fa;gl.lineSty
         if(ib.hv){G.fillStyle(0x9fdcff,0.18*ws);G.fillCircle(ib.hx,ib.hy,w*1.9);G.fillStyle(0xcfeeff,0.3*ws);G.fillCircle(ib.hx,ib.hy,w);G.fillStyle(0xffffff,0.5*ws);G.fillCircle(ib.hx,ib.hy,w*0.45);} // 壁に当たった所の光
       }
     }
-    if(cr.rv>0)return; // 結晶が砕けている間は何も描かない
+    if(cr.bf>0){ // 砕けた瞬間の閃光：最初に一番明るく、光が大きく広がりながら消えていく（加算合成）
+      const u=1-cr.bf/ICE_BF,al=(1-u)*(1-u),R=ICE_TIP*(2+6*u),G=this.glow;
+      G.fillStyle(0x7fd0ff,0.22*al);G.fillCircle(cr.bx,cr.by,R*2);
+      G.fillStyle(0x9fdcff,0.35*al);G.fillCircle(cr.bx,cr.by,R*1.3);
+      G.fillStyle(0xcfeeff,0.55*al);G.fillCircle(cr.bx,cr.by,R*0.8);
+      G.fillStyle(0xffffff,0.9*al);G.fillCircle(cr.bx,cr.by,R*0.4);
+    }
+    if(cr.rv>0)return; // 結晶が砕けている間は結晶そのものは描かない
     const gl=cr.gl||0,L=ICE_TIP;
     const sc=(1+0.7*gl)*(ib&&ib.ph===1?1+0.06*Math.sin(ib.t*40):1)*(cr.pop>0?1-0.85*cr.pop/0.45:1); // ビームを撃つ時：結晶が大きくなり、撃っている間は小刻みに脈打つ
     if(gl>0){ // 結晶のまわりの光（加算合成）：溜めるほど大きく明るく、撃っている間は最大
@@ -3627,6 +3701,10 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
         g.lineStyle(5,lm?0x66e0ff:0xffffff,0.95);g.beginPath();g.arc(e.x,e.y,R,-Math.PI/2,-Math.PI/2+Math.PI*2*fr,false);g.strokePath();
       }
     }
+    for(const e of this.es){ // マグネット：くっついている接点に、赤と青の小さな点
+      if(!e.mg||e.dead)continue;const m=e.mg.p,dx=e.x-m.x,dy=e.y-m.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,r=m.r||ER,cx=m.x+nx*(r-3),cy=m.y+ny*(r-3);
+      g.fillStyle(0xd9473f,1);g.fillCircle(cx-ny*4,cy+nx*4,3.5);g.fillStyle(0x3d6fd1,1);g.fillCircle(cx+ny*4,cy-nx*4,3.5);
+    }
     for(const e of this.es)if(e.kind==='ice'&&!e.dead)this.drawIce(g,e);
     this.drawBlocks(g);
     if(this.es.length)for(const b of this.bul)this.drawLaser(g,b);
@@ -3712,7 +3790,7 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     g.save();g.translateCanvas(q.pvx,q.pvy);g.rotateCanvas(q.psi);
     if(this.eq()==='scatter'){ // 散弾：砲身ごとに、セット済み（戻って装填の待ちが終わった）の銛を描く。真ん中・左右とも同じ形
       for(const sl of[-1,0,1]){const v=this.ld[sl+1];if(v!==null&&v!==undefined&&v<=0){g.save();g.translateCanvas(0,sl*SC_OFF);g.rotateCanvas(sl*SC_SPREAD);g.translateCanvas(-6*BS,0);this.harpoon(g,LEN,false,false);g.restore();}}
-    }else if(!h&&this.cool<=0){const bm=this.eq()==='bomb',ox=bm?-8*BS:-6*BS;g.translateCanvas(ox,0);this.harpoon(g,LEN,bm,this.eq()==='firework');g.translateCanvas(-ox,0);} // 爆弾：爆弾の後ろ端（中心-半径12）が銃身の先端（18×BS=36）にちょうど触れる位置にセット // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
+    }else if(!h&&this.cool<=0){const bm=this.eq()==='bomb',ox=bm?-8*BS:-6*BS;g.translateCanvas(ox,0);this.harpoon(g,LEN,bm,this.eq()==='firework',this.eq()==='magnet');g.translateCanvas(-ox,0);} // 爆弾：爆弾の後ろ端（中心-半径12）が銃身の先端（18×BS=36）にちょうど触れる位置にセット // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
     g.scaleCanvas(BS,BS);g.fillStyle(skn.ba,ma);if(skn.barBody)skn.barBody(g,ma);else g.fillRoundedRect(-10,-6,28,12,4);if(skn.barDeco)skn.barDeco(g,ma); // 銃身は角が丸い四角 // 銃身：前端は据え置き。後ろ端は、装填中の銛の尻（中心-6・半径3.5＝-9.5）をギリギリ覆う位置
     g.restore();
   }
