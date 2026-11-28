@@ -314,6 +314,7 @@ const HOLD=0.28;          // 長押し判定秒（巻き取り開始）
 const PULLA=7500,PULLMAX=1000; // 巻き取りで敵を引く加速度・最高速
 const REEL_MAX=1.0;       // グイッと引く強さ（引く力・最高速にかかる倍率）
 const RB_D0=300;           // ゴム紐（テストモード）：この距離(px)で、引く力が「1＋rubber strength」倍になる（距離に比例して増える。距離0では元の力のまま）
+const rubberF=d=>!TUNE.rb?1:1+TUNE.rbk*(TUNE.rbs?(d/RB_D0)*(d/RB_D0):d/RB_D0); // ゴム紐の倍率（距離d）：スイッチオフ＝距離に比例／rbs（急に増える）オン＝距離の2乗に比例（近いうちは小さく、遠くで一気に増える）。どちらもd＝RB_D0で「1＋rubber strength」倍
 const TAUT_T=0.3; // 引いた後、紐がたるまずに本当にピンと張っている時間(秒)
 const JERK_T=0.15,JERK_CD=0; // 1回のグイッの長さ(秒)／次に引けるまでの間(秒、0＝制限なし)
 const REST=0.88;          // 壁の反発（大きいほどよく跳ねる）
@@ -677,7 +678,7 @@ const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0
 try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(typeof d.playSec==='number'&&d.playSec>=0)save.playSec=d.playSec;if(typeof d.tix==='number'&&d.tix>=0)save.tix=Math.floor(d.tix);if(d.ch&&typeof d.ch==='object')Object.assign(save.ch,d.ch);if(d.chp&&typeof d.chp==='object')Object.assign(save.chp,d.chp);if(d.owned)Object.assign(save.owned,d.owned);if(d.upg&&typeof d.upg==='object')Object.assign(save.upg,d.upg);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
 const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}};
 /* ===== テストモード用の調整値（設定画面のスライダー）：壁の反発(0.3〜1)／空気抵抗の倍率／自機のサイズの倍率／引く力の倍率。通常モードでは常に初期値 ===== */
-const TUNE_DEF={rest:REST,air:1,size:1,pull:1,rb:0,rbk:1},TUNE=Object.assign({},TUNE_DEF);
+const TUNE_DEF={rest:REST,air:1,size:1,pull:1,rb:0,rbk:1,rbs:0},TUNE=Object.assign({},TUNE_DEF);
 if(TEST_MODE){try{const v=JSON.parse(localStorage.getItem('railreel.tune')||'{}');for(const k in TUNE_DEF)if(typeof v[k]==='number'&&isFinite(v[k]))TUNE[k]=v[k];}catch(e){}}
 BS=TUNE.size;SC_OFF=SC_OFF0*BS;
 const TK_PRICE=100,TK_REROLL=5; // チケット：ショップの値段（コイン）／1枚で得られるリロール回数
@@ -732,7 +733,7 @@ setInterval(()=>{ // 1秒ごと：プレイ中（結果画面・ホーム・裏�
   if(ST.sec>=30||(!live&&(ST.sec||ST.plays)))stSend();
   if(play!==ST.up&&!ST.busy)stLink(play); // 送信が終わってから切る
 },1000);
-let tutLast='',demoDone=false,repDone=false; // repDone＝台本の再生（チュートリアルの一番最初）を見せ終えた（ページを開いている間）
+let tutLast='',demoDone=false,repDone=false,freeNext=false; // repDone＝台本の再生（チュートリアルの一番最初）を見せ終えた（ページを開いている間）
 // 台本再生の補助 // demoDone＝見本（チュートリアルを自動で通して見せる）を見せ終えた（ページを開いている間）
 let screen='home',ovAt=0;
 setInterval(()=>{ // 総合プレイ時間：1秒ごと、プレイ中（結果画面・ホーム・一時停止中・裏タブは除く）なら1秒足す。10秒ごとにセーブ（設定の「Total play time」に出る）
@@ -972,17 +973,17 @@ const DEFS=[['rest','Wall bounce',0.3,3,0.01,v=>v.toFixed(2)],['air','Air drag',
 const store=()=>{try{localStorage.setItem('railreel.tune',JSON.stringify(TUNE));}catch(e){}};
 const scn=()=>{try{return game.scene.scenes[0];}catch(e){return null;}};
 const apply=(k,nv,ov)=>{if(k==='size'){BS=nv;SC_OFF=SC_OFF0*nv;}if(k==='rest'){const s=scn();if(s&&typeof s.rest==='number')s.rest=Math.max(0,s.rest+(nv-ov));}}; // 反発は、いま遊んでいる最中の値にも反映（強化で増えた分は残す）
-const rows=[];let swUpd=()=>{};
-const addSwitch=()=>{ // ゴム紐のスイッチ：オンの間、敵との距離が遠いほど引く力が強くなる
+const rows=[];const swUpds=[];
+const addSwitch=(label,key)=>{ // スイッチ（オンの間だけ有効）
 const row=document.createElement('div');row.className='srow tnR';
-const sp=document.createElement('span');sp.textContent='Rubber string';
-const sw=document.createElement('button');sw.className='sw';sw.type='button';sw.setAttribute('role','switch');sw.setAttribute('aria-label','Rubber string');sw.appendChild(document.createElement('i'));
-swUpd=()=>sw.setAttribute('aria-checked',TUNE.rb?'true':'false');swUpd();
-sw.addEventListener('pointerup',()=>{TUNE.rb=TUNE.rb?0:1;swUpd();store();});
+const sp=document.createElement('span');sp.textContent=label;
+const sw=document.createElement('button');sw.className='sw';sw.type='button';sw.setAttribute('role','switch');sw.setAttribute('aria-label',label);sw.appendChild(document.createElement('i'));
+const upd=()=>sw.setAttribute('aria-checked',TUNE[key]?'true':'false');upd();swUpds.push(upd);
+sw.addEventListener('pointerup',()=>{TUNE[key]=TUNE[key]?0:1;upd();store();});
 row.append(sp,sw);list.insertBefore(row,how);
 };
 for(const [k,lab,mn,mx,st,fm] of DEFS){
-if(k==='rbk')addSwitch();
+if(k==='rbk'){addSwitch('Rubber string','rb');addSwitch('Rubber steep','rbs');} // ゴム紐：オン／距離に対して急に増える（オフは比例）
 const row=document.createElement('div');row.className='srow tnR';
 const sp=document.createElement('span');sp.textContent=lab;
 const inp=document.createElement('input');inp.type='range';inp.min=mn;inp.max=mx;inp.step=st;inp.value=TUNE[k];
@@ -993,8 +994,13 @@ row.append(sp,inp,out);list.insertBefore(row,how);rows.push([k,inp,out,fm]);
 const rr=document.createElement('div');rr.className='srow tnR';
 const rs=document.createElement('span');rs.textContent='Tuning';
 const rb=document.createElement('button');rb.className='pill';rb.type='button';rb.textContent='Reset';
-rb.addEventListener('pointerup',()=>{for(const [k,inp,out,fm] of rows){const ov=TUNE[k];TUNE[k]=TUNE_DEF[k];inp.value=TUNE_DEF[k];out.textContent=fm(TUNE_DEF[k]);apply(k,TUNE_DEF[k],ov);}TUNE.rb=TUNE_DEF.rb;swUpd();store();});
+rb.addEventListener('pointerup',()=>{for(const [k,inp,out,fm] of rows){const ov=TUNE[k];TUNE[k]=TUNE_DEF[k];inp.value=TUNE_DEF[k];out.textContent=fm(TUNE_DEF[k]);apply(k,TUNE_DEF[k],ov);}TUNE.rb=TUNE_DEF.rb;TUNE.rbs=TUNE_DEF.rbs;swUpds.forEach(u=>u());store();});
 rr.append(rs,rb);list.insertBefore(rr,how);
+const fr=document.createElement('div');fr.className='srow tnR'; // チュートリアルの「自由に試すパート」にいつでも行く（敵は攻撃せず、ライフなし。ダメージ100で終了ボタン）
+const fs=document.createElement('span');fs.textContent='Free practice';
+const fgo=document.createElement('button');fgo.className='pill';fgo.type='button';fgo.textContent='Start';
+fgo.addEventListener('pointerup',()=>{freeNext=true;testPick='default';setEl.style.display='none';runGame();});
+fr.append(fs,fgo);list.insertBefore(fr,how);
 })();}
 /* ===== 強化図鑑：ホーム画面の下のボタンから開く。選んだことのある強化は明るいカード、まだのものは「???」のカード。ランク別（C→SS） ===== */
 const ZK_RK=['C','B','A','S','SS'];
@@ -1278,17 +1284,17 @@ class Main extends Phaser.Scene{
   create(){
     paused=false;document.body.classList.remove('paused');this.time.paused=false;this.tweens.resumeAll();
     this.tutOn=!save.tut&&testPick==='default'&&!/[?&](e?boss)/.test(TEST_URL); // チュートリアル中（初めて・テストの敵指定なし）
-    setShape(this.tutOn?'line':shapeFor(startStage()),this.scale.width,this.scale.height);
+    setShape((this.tutOn||freeNext)?'line':shapeFor(startStage()),this.scale.width,this.scale.height);
     this.s=RAIL.s0;this.vel=0;this.acc=0;this.freeze=0;this.punch=0;this.ts=1;this.slowT=0;this.slowLen=0;this.slowCD=0;this.recoil=0;this.cool=0;this.hcool=0;
     this.h=null;this.ex=[];this.ld=[0,0,0];this.rope=null;this.ropeLen=0;this.holdT=0;this.reeling=false;this.taut=false;this.lbl='';
-    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:startStage();this.kills=0;this.runMax=0;this.spkN=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
+    this.php=this.maxhp=MAXHP;this.rev=0;this.pickOn=false;this.upgT=0;this.inv=0;this.shn=0;this.shInv=0;this.shA=0;this.over=false;this.gone=false;this.stage=this.tutOn?0:freeNext?1:startStage();this.kills=0;this.runMax=0;this.spkN=0;this.log=[];this.pieces=[];this.bul=[];this.hintArm=false;this.hintDef=false;
     this.es=[];(this.dmgT||[]).forEach(t=>t.destroy());this.dmgT=[];this.combo=0;this.comboT=0;this.wallF=0;this.imps=[];this.shards=[];this.fwk=[];this.fwf=[];this.chunks=[];this.resT=0;this.msgT=0;this.yankC=0;
     this.reelGrace=0;this.wasHeld=false;this.pressFired=false;this.jerkT=0;this.pullCD=0;this.snapT=0;this.tautT=0;this.jerkFx=false;
     this.rerolls=1;this.mv=1;this.rest=TUNE.rest;this.spd=SPD_BASE;this.stuckT=STUCK_BASE;this.pullM=1;this.cells=null;this.spkCD=0;this.wp=wallPath(); // 強化で変わる値（銛の速さ・刺さっていられる時間・引く力の倍率）とトゲ地帯
     this.cameras.main.setBackgroundColor(0x101728);
     this.tp='fire';this.tpull=0;this.tutSp=TUT_MIN;this.tutRun=0;this.tutRunSp=0.6;this.tutWait=TUT_TURN_T+TUT_GOAL_T;this.tutGoal=true;this.tutArm=false;this.tutKillT=0;this.tutSlowOn=false;this.demo=this.tutOn&&!demoDone;if(this.demo)this.tutWait=3; // 見本は、最初の文言を読める間（3秒）待ってから始める
     this.demoT=0;this.demoTp='';this.dT=0;this.demoHold=false;this.demoMv=0;this.demoEndT=0;this.demoFlash=0;this.demoFin=false; // 見本（初めての人は、まず自動で通して見せる）／チュートリアルの進行（fire→fly→pull→move→run）
-    this.free=false;this.freeDmg=0;this.freeDone=false;document.body.classList.remove('free','freeDone');document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
+    this.free=false;this.freeDmg=0;this.freeDone=false;document.body.classList.remove('free','freeDone');this.freeTest=false;if(freeNext){freeNext=false;this.free=true;this.freeTest=true;document.body.classList.add('free');} /* テストモードの設定画面から：チュートリアルの「自由に試すパート」にいつでも入る（セーブは変えない） */document.body.classList.toggle('tut',this.tutOn);document.body.classList.remove('tutF','tutS','tutSlow');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
 
     if(!this.textures.exists('spark')){
       const tg=this.make.graphics({x:0,y:0,add:false});
@@ -1421,7 +1427,7 @@ class Main extends Phaser.Scene{
     this.scene.restart();
   }
   tutSkip(){ // 左上のSkip：チュートリアル全体を飛ばす。二度と出ないようにセーブして、ステージ1から始め直す
-    if(this.demoFin)return;this.demoFin=true;demoDone=true;save.tut=1;knX=knY=0;persist();
+    if(this.demoFin)return;this.demoFin=true;demoDone=true;if(!this.freeTest)save.tut=1;knX=knY=0;persist();
     document.body.classList.remove('tut','tutF','tutS','tutSlow','freeDone');fb.classList.remove('tutp');stk.classList.remove('tutp');tutEl.classList.remove('on');tutCEl.classList.remove('on');tutLast='';
     fireQ=false;kfire=false;this.scene.restart();
   }
@@ -2216,7 +2222,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const T=this.tail(),LT=this.liftTarget(q,e,T),dx=LT.x-T.x,dy=LT.y-T.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
       const rx=T.x-e.x,ry=T.y-e.y,rc=rx*ny-ry*nx; // 接続点の腕の長さ（トルク用。てこの長さ）
       const vr=e.vx*nx+e.vy*ny+e.w*rc;
-      const kk=(o.tut?(this.demo?DEMO_PULL_K:TUT_PULL_K):REEL_MAX*this.pullM*TUNE.pull*(TUNE.rb?1+TUNE.rbk*Math.hypot(T.x-q.pvx,T.y-q.pvy)/RB_D0:1))*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
+      const kk=(o.tut?(this.demo?DEMO_PULL_K:TUT_PULL_K):REEL_MAX*this.pullM*TUNE.pull*rubberF(Math.hypot(T.x-q.pvx,T.y-q.pvy)))*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
       if(vr<PULLMAX*kk){const a=Math.min(PULLA*kk*STEP,PULLMAX*kk-vr)/(e.m||1)/(1+rc*rc/EIo);e.vx+=nx*a;e.vy+=ny*a;e.w=clamp(e.w+rc*a/EIo,-20,20);}
     }
     // 移動
