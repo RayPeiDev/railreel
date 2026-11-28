@@ -306,13 +306,14 @@ function pose(s,rc,tx,ty){
 /* ===== 調整用の定数 ===== */
 const ER=32,EI=ER*ER*2; // 敵の半径／EI＝敵の回転しにくさ
 const LMIN=12; // 刺さった銛が縮められる最短の長さ（敵を引き寄せる時、銛が伸縮して敵が自機まで届く）
-const LEN=72,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
+let LEN=72;const LEN0=72,SPD_BASE=860,STEP0=1/60,ZOOM_RATE=0.00075,VIEW_W=813,LINE_ZOOM_RATE=0.00091,LINE_VIEW_W=672;let STEP=STEP0; // ズーム：ZOOM_RATE（高さ基準）・VIEW_W（見える幅の最小）は四角・円・三角用。LINE_〜は直線の最初の方式用（直線のレールをスマホ縦で約640にするため、元の値のまま） // SPD_BASE＝銛の飛ぶ速さの初期値（強化で増える。以前は1000）
 const TURN_K=36; // 切り返し時の速度の追従の速さ（通常は14。大きいほど素早く反転する）
 const SPEED=330;          // 自機のレール上の速さ
 const RMAX=1000,NSEG=24;   // ロープの最大長・分割数
 const HOLD=0.28;          // 長押し判定秒（巻き取り開始）
 const PULLA=7500,PULLMAX=1000; // 巻き取りで敵を引く加速度・最高速
 const REEL_MAX=1.0;       // グイッと引く強さ（引く力・最高速にかかる倍率）
+const RB_D0=300;           // ゴム紐（テストモード）：この距離(px)で、引く力が「1＋rubber strength」倍になる（距離に比例して増える。距離0では元の力のまま）
 const TAUT_T=0.3; // 引いた後、紐がたるまずに本当にピンと張っている時間(秒)
 const JERK_T=0.15,JERK_CD=0; // 1回のグイッの長さ(秒)／次に引けるまでの間(秒、0＝制限なし)
 const REST=0.88;          // 壁の反発（大きいほどよく跳ねる）
@@ -386,7 +387,7 @@ function dseg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,t=clamp(((px-ax)*dx+(py
 const STUCK_BASE=2.4,FLY_LIM=20,FLY_SUB=10,SPD_SAFE=1500; // 銛が敵に刺さっていられる時間（秒）の初期値（以前は3.0。刺さりは時間が過ぎると砕けて外れる）。強化に上限はない／すり抜け防止：飛ぶ銛が1ステップでFLY_LIM(px)を超えて進む時だけ、FLY_SUB(px)以下ずつ刻んで当たり判定する／SPD_SAFE＝漂い・跳ね返りの勢いに使う銛の速さの頭打ち
 const SPK_N=160,SPK_N0=12,SPK_N1=0,SPK_NMIN=2,SPK_CD=0.15,SPK_PUSH=110,SPK_PUSH2=55; // トゲ地帯：区画の総数はSPK_Nで固定（図形が変わっても同じ。一区画の長さ＝壁一周÷SPK_Nで調整する）／埋める区画の個数＝N0−N1×(強さ−1)（強いほど少ない。強さ1の灰が一番多く、下限NMIN）／トゲの追加ダメージと吹き飛びが連続で入る間隔(秒)／吹き飛ぶ速さ(px/秒)＝PUSH＋PUSH2×強さ
 const AIM_LEAD=0.8; // 照準の先読み補正：0＝なし（敵の今いる位置を狙う）／0.8＝元の値（動く敵の少し先を狙う）
-const SC_SPREAD=0.2,SC_OFF=12; // 散弾：左右の銛の開き角(rad)と、発射位置の横ずれ(px)
+const SC_SPREAD=0.2,SC_OFF0=6; let SC_OFF=SC_OFF0; // 散弾：左右の銛の開き角(rad)と、発射位置の横ずれ(px)。横ずれは自機のサイズ(BS)に比例（SC_OFF＝SC_OFF0×BS）。砲身の三叉の位置(SC_OFF/BS)が、サイズを変えても同じになる
 // 花火砲台：刺さっている間、紐を火花が走り、敵に届くと一定の強さの花火が上がる
 const FW_GAP=0;              // 花火が上がってから、次の火花が走り出すまでの間隔(秒)。0なら間隔なしで、すぐ次の火花が走る（間隔を入れるとその間、紐は徐々に導火線の色（黄色）に戻る）
 const FW_SPD=300;            // 火花が紐を走る速さ(px/秒)
@@ -676,9 +677,9 @@ const SAVE_KEY='railreel.save.v1',save={coins:0,owned:{std:1},equip:'std',best:0
 try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(typeof d.coins==='number')save.coins=d.coins;if(typeof d.best==='number')save.best=d.best;if(typeof d.maxDmg==='number')save.maxDmg=d.maxDmg;if(typeof d.sfx==='boolean')save.sfx=d.sfx;if(typeof d.tut==='number')save.tut=d.tut;if(typeof d.playSec==='number'&&d.playSec>=0)save.playSec=d.playSec;if(typeof d.tix==='number'&&d.tix>=0)save.tix=Math.floor(d.tix);if(d.ch&&typeof d.ch==='object')Object.assign(save.ch,d.ch);if(d.chp&&typeof d.chp==='object')Object.assign(save.chp,d.chp);if(d.owned)Object.assign(save.owned,d.owned);if(d.upg&&typeof d.upg==='object')Object.assign(save.upg,d.upg);if(d.equip&&save.owned[d.equip])save.equip=d.equip;}catch(e){}
 const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}};
 /* ===== テストモード用の調整値（設定画面のスライダー）：壁の反発(0.3〜1)／空気抵抗の倍率／自機のサイズの倍率／引く力の倍率。通常モードでは常に初期値 ===== */
-const TUNE_DEF={rest:REST,air:1,size:1,pull:1},TUNE=Object.assign({},TUNE_DEF);
+const TUNE_DEF={rest:REST,air:1,size:1,pull:1,rb:0,rbk:1},TUNE=Object.assign({},TUNE_DEF);
 if(TEST_MODE){try{const v=JSON.parse(localStorage.getItem('railreel.tune')||'{}');for(const k in TUNE_DEF)if(typeof v[k]==='number'&&isFinite(v[k]))TUNE[k]=v[k];}catch(e){}}
-BS=TUNE.size;
+BS=TUNE.size;SC_OFF=SC_OFF0*BS;
 const TK_PRICE=100,TK_REROLL=5; // チケット：ショップの値段（コイン）／1枚で得られるリロール回数
 const TK_IC='<svg viewBox="0 0 24 24" style="width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round;vertical-align:-.25em"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14.5 7v10" stroke-dasharray="1.6 2.2"/></svg>';
 const TK_BIG='<svg viewBox="0 0 64 64"><path d="M8 20a4 4 0 0 1 4-4h40a4 4 0 0 1 4 4v7a5 5 0 0 0 0 10v7a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4v-7a5 5 0 0 0 0-10z"/><path d="M40 18v28" stroke-dasharray="3 5"/></svg>';
@@ -897,10 +898,10 @@ function shipCanvas(id){
   g.lineStyle(2,sk.ol,ma);g.strokeRoundedRect(3-rc,-14,24,28,6);
   if(sk.bodyDeco)sk.bodyDeco(g,rc,ma);
   { // 装填済みの銛（ゲーム中のセット状態と同じ形・位置。ゲーム側の座標は自機の2倍なので 0.5 倍で描く）
-    const hp=(bm,fw)=>Main.prototype.harpoon(g,LEN,bm,fw);
+    const hp=(bm,fw)=>Main.prototype.harpoonRaw(g,LEN0,bm,fw);
     x.save();x.translate(14-rc,0);
-    if(id==='scatter'){for(const sl of[-1,0,1]){x.save();x.translate(0,sl*SC_OFF);x.rotate(sl*SC_SPREAD);x.translate(-6,0);hp(false,false);x.restore();}}
-    else if(id==='bomb'){x.translate(64-LEN,0);hp(true,false);}
+    if(id==='scatter'){for(const sl of[-1,0,1]){x.save();x.translate(0,sl*SC_OFF/BS);x.rotate(sl*SC_SPREAD);x.translate(-6,0);hp(false,false);x.restore();}}
+    else if(id==='bomb'){x.translate(64-LEN0,0);hp(true,false);}
     else{x.translate(-6,0);hp(false,id==='firework');}
     x.restore();
   }
@@ -967,12 +968,21 @@ sfxSw.addEventListener('pointerup',()=>{save.sfx=!save.sfx;persist();updSet();if
 /* ===== テストモード用の調整：設定画面のスライダー（壁の反発・空気抵抗・自機のサイズ・引く力）。値は端末に保存。通常モードでは作らない ===== */
 if(TEST_MODE){(()=>{
 const list=document.getElementById('setList'),how=document.getElementById('tutRe').parentNode;
-const DEFS=[['rest','Wall bounce',0.3,1,0.01,v=>v.toFixed(2)],['air','Air drag',0,3,0.1,v=>'×'+v.toFixed(1)],['size','Ship size',0.5,2.5,0.05,v=>'×'+v.toFixed(2)],['pull','Pull force',0.2,3,0.1,v=>'×'+v.toFixed(1)]];
+const DEFS=[['rest','Wall bounce',0.3,3,0.01,v=>v.toFixed(2)],['air','Air drag',0,10,0.1,v=>'×'+v.toFixed(1)],['size','Ship size',0.5,5,0.05,v=>'×'+v.toFixed(2)],['pull','Pull force',0.2,10,0.1,v=>'×'+v.toFixed(1)],['rbk','Rubber strength',0,10,0.1,v=>'×'+v.toFixed(1)]];
 const store=()=>{try{localStorage.setItem('railreel.tune',JSON.stringify(TUNE));}catch(e){}};
 const scn=()=>{try{return game.scene.scenes[0];}catch(e){return null;}};
-const apply=(k,nv,ov)=>{if(k==='size')BS=nv;if(k==='rest'){const s=scn();if(s&&typeof s.rest==='number')s.rest=Math.max(0,s.rest+(nv-ov));}}; // 反発は、いま遊んでいる最中の値にも反映（強化で増えた分は残す）
-const rows=[];
+const apply=(k,nv,ov)=>{if(k==='size'){BS=nv;SC_OFF=SC_OFF0*nv;}if(k==='rest'){const s=scn();if(s&&typeof s.rest==='number')s.rest=Math.max(0,s.rest+(nv-ov));}}; // 反発は、いま遊んでいる最中の値にも反映（強化で増えた分は残す）
+const rows=[];let swUpd=()=>{};
+const addSwitch=()=>{ // ゴム紐のスイッチ：オンの間、敵との距離が遠いほど引く力が強くなる
+const row=document.createElement('div');row.className='srow tnR';
+const sp=document.createElement('span');sp.textContent='Rubber string';
+const sw=document.createElement('button');sw.className='sw';sw.type='button';sw.setAttribute('role','switch');sw.setAttribute('aria-label','Rubber string');sw.appendChild(document.createElement('i'));
+swUpd=()=>sw.setAttribute('aria-checked',TUNE.rb?'true':'false');swUpd();
+sw.addEventListener('pointerup',()=>{TUNE.rb=TUNE.rb?0:1;swUpd();store();});
+row.append(sp,sw);list.insertBefore(row,how);
+};
 for(const [k,lab,mn,mx,st,fm] of DEFS){
+if(k==='rbk')addSwitch();
 const row=document.createElement('div');row.className='srow tnR';
 const sp=document.createElement('span');sp.textContent=lab;
 const inp=document.createElement('input');inp.type='range';inp.min=mn;inp.max=mx;inp.step=st;inp.value=TUNE[k];
@@ -983,7 +993,7 @@ row.append(sp,inp,out);list.insertBefore(row,how);rows.push([k,inp,out,fm]);
 const rr=document.createElement('div');rr.className='srow tnR';
 const rs=document.createElement('span');rs.textContent='Tuning';
 const rb=document.createElement('button');rb.className='pill';rb.type='button';rb.textContent='Reset';
-rb.addEventListener('pointerup',()=>{for(const [k,inp,out,fm] of rows){const ov=TUNE[k];TUNE[k]=TUNE_DEF[k];inp.value=TUNE_DEF[k];out.textContent=fm(TUNE_DEF[k]);apply(k,TUNE_DEF[k],ov);}store();});
+rb.addEventListener('pointerup',()=>{for(const [k,inp,out,fm] of rows){const ov=TUNE[k];TUNE[k]=TUNE_DEF[k];inp.value=TUNE_DEF[k];out.textContent=fm(TUNE_DEF[k]);apply(k,TUNE_DEF[k],ov);}TUNE.rb=TUNE_DEF.rb;swUpd();store();});
 rr.append(rs,rb);list.insertBefore(rr,how);
 })();}
 /* ===== 強化図鑑：ホーム画面の下のボタンから開く。選んだことのある強化は明るいカード、まだのものは「???」のカード。ランク別（C→SS） ===== */
@@ -2206,7 +2216,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const T=this.tail(),LT=this.liftTarget(q,e,T),dx=LT.x-T.x,dy=LT.y-T.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
       const rx=T.x-e.x,ry=T.y-e.y,rc=rx*ny-ry*nx; // 接続点の腕の長さ（トルク用。てこの長さ）
       const vr=e.vx*nx+e.vy*ny+e.w*rc;
-      const kk=(o.tut?(this.demo?DEMO_PULL_K:TUT_PULL_K):REEL_MAX*this.pullM*TUNE.pull)*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
+      const kk=(o.tut?(this.demo?DEMO_PULL_K:TUT_PULL_K):REEL_MAX*this.pullM*TUNE.pull*(TUNE.rb?1+TUNE.rbk*Math.hypot(T.x-q.pvx,T.y-q.pvy)/RB_D0:1))*(o.type==='boss'&&o.arms.some(a=>a.alive)?BRACE:1); // 盾がある間のボスは踏ん張る
       if(vr<PULLMAX*kk){const a=Math.min(PULLA*kk*STEP,PULLMAX*kk-vr)/(e.m||1)/(1+rc*rc/EIo);e.vx+=nx*a;e.vy+=ny*a;e.w=clamp(e.w+rc*a/EIo,-20,20);}
     }
     // 移動
@@ -2622,16 +2632,16 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       const r=rope,pn=rl?(rl?1:0):0;
       const col=rl?((255<<16)|(Math.round(179-128*pn)<<8)|Math.round(71+14*pn)):(tz?0xffe6a8:0x8ea0c8);
       const sk=main&&this.snapT>0&&h?this.snapT/0.25:0; // 引いた直後は、実際に張った紐そのものを一瞬白く太く描く
-      if(sk>0)g.lineStyle(4+5*sk,sk>0.4?0xffffff:0xffe6a8,1);
-      else g.lineStyle(rl?3+5*pn:(tz?4:2.5),col,tz?1:0.85);
+      if(sk>0)g.lineStyle((4+5*sk)*BS,sk>0.4?0xffffff:0xffe6a8,1);
+      else g.lineStyle((rl?3+5*pn:(tz?4:2.5))*BS,col,tz?1:0.85);
       const fuse=main&&h&&h.st==='stuck'&&h.fz&&!rl&&!(sk>0); // 花火で刺さっている間（引いた直後・巻き取り中の演出は優先）
       if(fuse){
         const fzz=h.fz,draw=(pts,w,c,al)=>{if(pts.length<2)return;g.lineStyle(w,c,al);g.beginPath();g.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);g.strokePath();};
-        if(fzz.w>0){const u=1-fzz.w/FW_GAP;draw(r,3+u,lerpC(0x7c8296,0xffe6a8,u),0.95+0.05*u);} // 花火のあとの間隔：灰色から、徐々に導火線の黄色に戻っていく
+        if(fzz.w>0){const u=1-fzz.w/FW_GAP;draw(r,(3+u)*BS,lerpC(0x7c8296,0xffe6a8,u),0.95+0.05*u);} // 花火のあとの間隔：灰色から、徐々に導火線の黄色に戻っていく
         else{
           const [burnt,fresh]=polySplit(r,fzz.d);
-          draw(burnt,3,0x7c8296,0.95);   // 燃えたあと＝灰色
-          draw(fresh,4,0xffe6a8,1);      // まだ燃えていない＝黄色
+          draw(burnt,3*BS,0x7c8296,0.95);   // 燃えたあと＝灰色
+          draw(fresh,4*BS,0xffe6a8,1);      // まだ燃えていない＝黄色
         }
       }else{
         g.beginPath();g.moveTo(r[0].x,r[0].y);
@@ -2643,7 +2653,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     // 銛
     if(h&&part!=='rope'&&!(h.home&&h.st==='back')){
       const n=h.trail.length;
-      for(let i=1;i<n;i++){g.lineStyle(3*i/n,0xffb347,0.6*i/n);g.lineBetween(h.trail[i-1].x,h.trail[i-1].y,h.trail[i].x,h.trail[i].y);}
+      for(let i=1;i<n;i++){g.lineStyle(3*BS*i/n,0xffb347,0.6*i/n);g.lineBetween(h.trail[i-1].x,h.trail[i-1].y,h.trail[i].x,h.trail[i].y);}
       let ang;
       if(h.st==='fly')ang=Math.atan2(h.uy,h.ux);
       else if(h.st==='drift')ang=h.ang;
@@ -2654,7 +2664,7 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
       this.harpoon(g,L,this.eq()==='bomb'&&!h.bd,this.eq()==='firework'); // 爆弾：爆発するまでは先端近くに刺さっている（h.bd＝爆発して取れた）
       if(h.st==='stuck'){ // 砕ける前触れ：最後は白く点滅（ひびの線は描かない）
         const k=h.stT/this.stuckT;
-        if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2,-7,L+8,14,5);}
+        if(k>0.75&&Math.floor(h.stT*(10+30*(k-0.75)*4))%2){g.fillStyle(0xffffff,0.55);g.fillRoundedRect(-2*BS,-7*BS,(L+8)*BS,14*BS,5*BS);}
       }
       g.restore();
     }
@@ -2840,7 +2850,10 @@ skipStage(){ // テストモード用：今のステージの敵を倒したこ�
     if(this.h){this.stepHarpoon(q);if(this.h)this.stepExtras(q);}
   }
 
-  harpoon(g,len,bomb,fw){ // bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
+  harpoon(g,len,bomb,fw){ // 銛を自機のサイズ(BS)に合わせて描く（len＝当たり判定の長さ。自機のサイズでは変わらない。見た目だけ、元の形をBS倍にして描く＝長さ・太さ・爆弾が比例する）
+g.save();g.scaleCanvas(BS,BS);this.harpoonRaw(g,len,bomb,fw);g.restore();
+}
+harpoonRaw(g,len,bomb,fw){ // 元の大きさ(BS=1)の銛の形。bomb＝先端近くに爆弾を刺した形（爆弾の砲台）
     const hl=Math.min(26,len),k=hl/26;
     if(fw){ // 花火砲台：白っぽい軸に赤い斜めの縞（縞は軸の長さに合わせて数が変わる）
       const sl=Math.max(0,len-18);g.fillStyle(0xf1e3c0,1);g.fillRect(0,-2.2,sl,4.4);
@@ -3108,8 +3121,8 @@ g.lineStyle(2,sh.c,al);g.lineBetween(ax,ay,bx,by);}
     // 銛の発射台（敵を向く）＋装填中の銛
     g.save();g.translateCanvas(q.pvx,q.pvy);g.rotateCanvas(q.psi);
     if(this.eq()==='scatter'){ // 散弾：砲身ごとに、セット済み（戻って装填の待ちが終わった）の銛を描く。真ん中・左右とも同じ形
-      for(const sl of[-1,0,1]){const v=this.ld[sl+1];if(v!==null&&v!==undefined&&v<=0){g.save();g.translateCanvas(0,sl*SC_OFF);g.rotateCanvas(sl*SC_SPREAD);g.translateCanvas(-6,0);this.harpoon(g,LEN,false,false);g.restore();}}
-    }else if(!h&&this.cool<=0){const bm=this.eq()==='bomb',ox=bm?18*BS+46-LEN:-6;g.translateCanvas(ox,0);this.harpoon(g,LEN,bm,this.eq()==='firework');g.translateCanvas(-ox,0);} // 爆弾：爆弾の後ろ端（中心-半径12）が銃身の先端（18×BS=36）にちょうど触れる位置にセット // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
+      for(const sl of[-1,0,1]){const v=this.ld[sl+1];if(v!==null&&v!==undefined&&v<=0){g.save();g.translateCanvas(0,sl*SC_OFF);g.rotateCanvas(sl*SC_SPREAD);g.translateCanvas(-6*BS,0);this.harpoon(g,LEN,false,false);g.restore();}}
+    }else if(!h&&this.cool<=0){const bm=this.eq()==='bomb',ox=bm?-8*BS:-6*BS;g.translateCanvas(ox,0);this.harpoon(g,LEN,bm,this.eq()==='firework');g.translateCanvas(-ox,0);} // 爆弾：爆弾の後ろ端（中心-半径12）が銃身の先端（18×BS=36）にちょうど触れる位置にセット // 装填中の銛を先に描いて、そのあとに銃身を重ねる（銃身が銛より上）
     g.scaleCanvas(BS,BS);g.fillStyle(skn.ba,ma);if(skn.barBody)skn.barBody(g,ma);else g.fillRoundedRect(-10,-6,28,12,4);if(skn.barDeco)skn.barDeco(g,ma); // 銃身は角が丸い四角 // 銃身：前端は据え置き。後ろ端は、装填中の銛の尻（中心-6・半径3.5＝-9.5）をギリギリ覆う位置
     g.restore();
   }
